@@ -122,9 +122,9 @@ try{
   return Math.min(...sizes);
  });
  assert.ok(smallest>=13,`smallest rendered text is ${smallest}px, floor is 13px`);
- // Primary actions and navigation stay clearly larger than body text (13px base -> ~22px),
+ // Primary actions stay clearly larger than body text (13px base -> ~22px); the menu tabs
+ // are navigation and are asserted at the header ratio below instead.
  const actionSizes=await page.evaluate(()=>({
-  tab:parseFloat(getComputedStyle(document.querySelector('.tabs button')).fontSize),
   model:parseFloat(getComputedStyle(document.getElementById('model')).fontSize),
   screenshot:parseFloat(getComputedStyle(document.getElementById('screenshot')).fontSize),
   send:parseFloat(getComputedStyle(document.getElementById('send')).fontSize),
@@ -133,21 +133,38 @@ try{
  }));
  for(const [name,px] of Object.entries(actionSizes)){
   if(name==='base')continue;
-  assert.ok(px>=actionSizes.base*1.5-1,`${name} is ${px}px, expected >= 1.5x the ${actionSizes.base}px base`);
+  assert.equal(px,actionSizes.base,`${name} matches message size`);
  }
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth),false,
   'the 3x action type must not overflow horizontally');
- // Header-level text (wordmark, logo mark, session title, h1/h2) sits 15% above message text.
+ // Header-level text (wordmark, logo mark, menu tabs, text-size control, session title, h1/h2)
+ // sits exactly 20% above message text.
  const titleRatio=await page.evaluate(()=>{
   const px=s=>{const e=document.querySelector(s);return e?parseFloat(getComputedStyle(e).fontSize):null;};
   // Message text inherits the body size; fall back to it when the transcript is empty.
   const body=px('.message .body')??px('#transcript .message .body')??parseFloat(getComputedStyle(document.body).fontSize);
-  const titles=['.brand strong','.mark','.session-title','#features h1','#features h2'].map(px).filter(v=>v);
+  const titles=['.brand strong','.tabs button','.text-size-row label','.text-size-row output',
+                '#features h1','#features h2','#features h3'].map(px).filter(v=>v);
   return {body,titles,ratio:titles.length?+(titles[0]/body).toFixed(3):null,
           uniform:new Set(titles).size===1};
  });
- assert.equal(titleRatio.uniform,true,'every header/title uses one size');
- assert.ok(Math.abs(titleRatio.ratio-1.15)<0.02,`header text is ${titleRatio.ratio}x the message text, expected 1.15x`);
+ assert.equal(titleRatio.uniform,true,'every header/title/tab uses one size');
+ assert.ok(Math.abs(titleRatio.ratio-1.20)<0.02,`header text is ${titleRatio.ratio}x the message text, expected 1.20x`);
+
+ // Default typography stays proportional across the slider range.
+ for(const base of [10,13,16,20]){
+  const measured=await page.evaluate(base=>{
+   document.documentElement.style.setProperty('--ui-size',`${base}px`);
+   const px=s=>parseFloat(getComputedStyle(document.querySelector(s)).fontSize);
+   return {tab:px('.tabs button'),mark:px('.brand .mark'),session:px('#sessions'),send:px('#send'),family:getComputedStyle(document.querySelector('.tabs button')).fontFamily};
+  },base);
+  assert.ok(Math.abs(measured.tab-base*1.2)<.01);
+  assert.equal(measured.mark,base*1.25);
+  assert.equal(measured.session,base*1.125);
+  assert.equal(measured.send,base);
+  assert.match(measured.family,/Valve/);
+ }
+ await page.evaluate(()=>document.documentElement.style.setProperty('--ui-size','13px'));
 
  // Compact sits with the context meter; Stop is always on screen but only enabled mid-turn.
  assert.equal(await page.evaluate(()=>document.getElementById('compact').parentElement.id),'context-meter',

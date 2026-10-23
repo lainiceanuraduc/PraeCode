@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.1.20
+
+- Default message and action text is 16px; tabs, wordmark and text-size controls remain 20% larger.
+- Use Valve for readable navigation and controls; conversation titles are 18px, detail text 14px, and metadata 13px at the default scale.
+- Verify typography proportions across text-size settings with the UI smoke test.
+
+## 0.1.19
+
+- The menu tabs, the logo (mark and HERMES wordmark) and the Text size label and value are now
+  exactly 20% larger than prompt and response text (`--font-title` 1.15 → 1.20), alongside every
+  heading. The tabs left the 1.7x action scale, so the tab bar drops from 22px to 15.6px at the
+  default size and the header loses ~7px; Send / Stop / Context keep 1.7x.
+- Removed the last literals that beat the header rule (welcome headline 29px, approval-card heading
+  13px, stray `h1`/`h2` sizes), so the ratio now holds everywhere instead of only on panel headings.
+- The UI smoke test asserts the 1.20x ratio for the tabs, logo and size control too, and no longer
+  expects the tabs on the action scale.
+
 ## 0.1.18
 
 - Re-release of 0.1.17 with no functional changes: rebuilt and version-stamped so the artifact

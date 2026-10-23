@@ -43,7 +43,7 @@ export function appearance(fallbackFontSize?:number):Appearance{
   // When the running manifest predates `radcode.fontSize`, the configured value reads as the
   // default; the caller passes the value mirrored in extension state so the slider still holds.
   const configured=c.get<number>('fontSize',0);
-  const fontSize=clampTextSize(configured>0?configured:(fallbackFontSize??13));
+  const fontSize=clampTextSize(configured>0?configured:(fallbackFontSize??16));
   return {accent:c.get<string>('accent','yellow'),fontFamily:c.get<string>('fontFamily','editor'),
           fontSize,lineHeight:c.get<number>('lineHeight',0),compact:c.get<boolean>('compact',false)};
  }

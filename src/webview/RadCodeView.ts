@@ -53,7 +53,7 @@ export class RadCodeView {
   // host persist it into radcode.fontSize so it survives a reload.
   const size=element<HTMLInputElement>('text-size');
   size.oninput=()=>{
-   const value=Math.min(20,Math.max(10,Number(size.value)||13));
+   const value=Math.min(20,Math.max(10,Number(size.value)||16));
    element('text-size-value').textContent=String(value);
    this.applyFontSize(value);
    this.post({type:'textSize',value});
@@ -211,7 +211,7 @@ export class RadCodeView {
   row.hidden=!visible;
   if(!visible)return;
   const size=element<HTMLInputElement>('text-size');
-  const current=Math.round(Number(this.state.appearance?.fontSize)||13);
+  const current=Math.round(Number(this.state.appearance?.fontSize)||16);
   if(Number(size.value)!==current)size.value=String(current);
   element('text-size-value').textContent=String(current);
  }
