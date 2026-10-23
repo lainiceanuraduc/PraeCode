@@ -10,6 +10,33 @@ stored in VS Code, and no Hermes configuration is modified.
 
 ![RadCode chat view, dark](https://raw.githubusercontent.com/lainiceanuraduc/RadCode/main/docs/ui-dark.png)
 
+## Disclosure: this was vibe-coded
+
+**Almost all of this code was written by AI agents — largely by Hermes Agent itself — driven by
+natural-language instructions, screenshots and corrections.** That is what "vibe-coded" means here:
+a human decided what it should do and rejected what was wrong, but did not type most of the
+implementation.
+
+What that does and does not imply:
+
+- **Verified where it claims to be.** Every behavioural claim in this README was exercised against a
+  real Hermes install, not assumed: 22 unit tests, 41 Python tests for the bridge, a Playwright UI
+  smoke suite, and a live ACP handshake. Numbers such as the per-model effort ladders were read back
+  from the provider, and several bugs were found exactly because a claim looked plausible but was not.
+- **Not audited line by line.** No independent security review has been done. The code has not been
+  read end-to-end by a human, and AI-written code has failure modes that tests miss: subtly wrong
+  edge-case handling, plausible-looking abstractions, and comments that describe intent rather than
+  behaviour.
+- **Treat it accordingly.** Read the source before granting broad autonomy. This extension can run
+  terminal commands and edit files through Hermes; if you switch approval to *Accept Edits* or
+  *Don't Ask*, that is your decision, not a vetted one. Do not point it at repositories you cannot
+  afford to have modified, and keep backups or version control you trust.
+- **No warranty.** MIT licence, provided "as is", without even the implied warranty of
+  merchantability or fitness for a particular purpose.
+
+If you want a vetted extension, this is not it yet. If you want a working, honest, actively corrected
+one, it is — and bug reports are welcome.
+
 ## Install
 
 **From the Marketplace** — search for **RadCode Hermes** in the Extensions view, or:
