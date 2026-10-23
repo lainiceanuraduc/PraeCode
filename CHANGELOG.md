@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.21
+
+- Replace the README screenshot with the supplied real conversation image, independent of generated UI smoke-test screenshots.
+
 ## 0.1.20
 
 - Default message and action text is 16px; tabs, wordmark and text-size controls remain 20% larger.
