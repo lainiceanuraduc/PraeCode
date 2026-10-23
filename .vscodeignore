@@ -15,3 +15,5 @@ package-lock.json
 .vscode/**
 dist/*.map
 media/fonts/*.zip
+media/icon@2x.png
+PUBLISHING.md

@@ -1,8 +1,33 @@
 # RadCode — Hermes Agent for VS Code
 
+[![Version](https://img.shields.io/badge/version-0.1.16-e5b93c)](CHANGELOG.md)
+[![License: MIT](https://img.shields.io/badge/license-MIT-e5b93c)](LICENSE)
+[![GitHub](https://img.shields.io/badge/source-GitHub-e5b93c)](https://github.com/lainiceanuraduc/RadCode)
+
 A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.16.
 It talks to your existing Hermes installation over **ACP** (Agent Client Protocol) — no API keys are
 stored in VS Code, and no Hermes configuration is modified.
+
+![RadCode chat view, dark](https://raw.githubusercontent.com/lainiceanuraduc/RadCode/main/docs/ui-dark.png)
+
+## Install
+
+**From the Marketplace** — search for **RadCode Hermes** in the Extensions view, or:
+
+```bash
+code   --install-extension lainiceanuraduc.radcode-hermes   # VS Code
+codium --install-extension lainiceanuraduc.radcode-hermes   # VSCodium
+```
+
+**From a VSIX** — `npm run package`, then *Extensions → … → Install from VSIX*.
+
+**From source** — `npm install && npm run compile`, then <kbd>F5</kbd> in the repo to launch an
+Extension Development Host.
+
+> The extension is a **client**, not a bundled agent. Nothing works until Hermes is installed and
+> `hermes acp --check` prints `Hermes ACP check OK`; the view still renders and tells you what is
+> missing.
+
 
 ## What works in v0.1
 

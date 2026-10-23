@@ -1,0 +1,81 @@
+# Changelog
+
+## 0.1.16
+
+- Slimmer chrome: header 150 → 92 px, footer 250 → 119 px (23% of the view), by settling the action
+  type scale at 1.7× the base size and collapsing stacked rows (wordmark and tagline share a line,
+  session bar and status strip are one line each, two-row composer).
+- Fixed the Subagents panel swallowing clicks: it scrolls as a plain block again instead of a flex
+  column, where a trailing caption overlapped the preset form's last button.
+- The approval-mode select no longer truncates to "Accept Edi"; the context-meter text ellipses first.
+
+## 0.1.15
+
+- `Compact` is back beside the context meter.
+- `Stop` is always visible and disabled when there is nothing to cancel.
+- Actions carry glyphs: `■ Stop`, `▶ Send`.
+
+## 0.1.14
+
+- Text-size slider moved above the tabs.
+- No page-level scrollbar: the webview is a fixed shell and only the transcript and panels scroll.
+- `Connect to Hermes` is a full-size primary button.
+- Text-size writes survive a stale extension manifest (mirrored into extension state).
+
+## 0.1.13
+
+- Model selector fills with the accent colour and turns its label near-black on hover.
+- `＋ Context` matches the other primary actions; the Show-reasoning checkbox is themed.
+- Text-size slider added under the context meter and bound to `radcode.fontSize`.
+- Type hierarchy rebalanced: wordmark, session title, section labels and message labels no longer
+  sit at body size.
+
+## 0.1.12
+
+- `Compact` adopts the primary action size.
+
+## 0.1.11
+
+- Tabs, model button, Screenshot, Stop and Send are raised to three times the base size.
+
+## 0.1.10
+
+- Pasted-image thumbnails decode again (`img-src {{cspSource}} data:` in the webview CSP).
+- 13px floor for all text, routed through one `--font-min` token.
+
+## 0.1.9
+
+- Bundled Pixelzone and Valve faces now actually apply: the `font:` shorthand no longer overrides the
+  later `font-family` rule.
+- Reasoning blocks render at their chronological position instead of the end of the transcript.
+- Status spinner wired to the session state.
+
+## 0.1.8
+
+- Reasoning toggle keeps history order; timestamps on every entry.
+
+## 0.1.7
+
+- Effort ladders are fetched when a model loads, not on the first effort change.
+
+## 0.1.6
+
+- Per-model Mistral ladders via `route_efforts(provider, model, base_url)`, plus the bundled Mistral
+  provider plugin.
+
+## 0.1.4 – 0.1.5
+
+- Code split into `src/extension/*` and `src/webview/*` with the domain logic free of VS Code imports.
+- Fixes: oversized-image rejection, context meter reset after an effort change, model switching via
+  `session/set_model`, compaction no longer wipes the transcript.
+
+## 0.1.1 – 0.1.3
+
+- Context-aware attachments (the open editor is offered as a chip), accent and font settings,
+  inline approval cards with a details modal, MCP server configuration, session rename through
+  `session.mutate`, actionable "Hermes is not installed" errors.
+
+## 0.1.0
+
+- First build: streaming chat over ACP, resumable sessions, model-aware thinking controls,
+  configurable worker agents.

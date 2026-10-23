@@ -3,13 +3,13 @@
   "displayName": "RadCode \u2014 Hermes Agent",
   "description": "Hermes Agent workspace chat, model-aware thinking controls, and configurable worker agents.",
   "version": "0.1.16",
-  "publisher": "radcode-local",
+  "publisher": "lainiceanuraduc",
   "license": "MIT",
   "engines": {
     "vscode": "^1.96.0"
   },
   "categories": [
-    "AI",
+    "Machine Learning",
     "Other"
   ],
   "main": "./dist/extension.js",
@@ -286,8 +286,9 @@
     "test:ui": "node scripts/ui-smoke.mjs",
     "test:live": "tsx scripts/live-smoke.ts",
     "test:worker": "tsx scripts/worker-smoke.ts",
-    "package": "npm run compile && vsce package --no-dependencies --allow-missing-repository",
-    "vscode:prepublish": "npm run compile"
+    "package": "npm run compile && vsce package --no-dependencies",
+    "vscode:prepublish": "npm run compile",
+    "publish": "vsce publish --no-dependencies"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
@@ -301,5 +302,34 @@
   "dependencies": {
     "dompurify": "^3.3.0",
     "marked": "^16.0.0"
+  },
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lainiceanuraduc/RadCode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lainiceanuraduc/RadCode/issues"
+  },
+  "homepage": "https://github.com/lainiceanuraduc/RadCode#readme",
+  "author": {
+    "name": "Radu Lainiceanu",
+    "email": "lainiceanu.radu.c@protonmail.com"
+  },
+  "keywords": [
+    "hermes",
+    "agent",
+    "acp",
+    "ai",
+    "chat",
+    "assistant",
+    "mistral",
+    "ollama",
+    "openrouter",
+    "mcp"
+  ],
+  "galleryBanner": {
+    "color": "#18191d",
+    "theme": "dark"
   }
 }
