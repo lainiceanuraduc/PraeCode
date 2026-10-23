@@ -8,7 +8,7 @@ A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresea
 It talks to your existing Hermes installation over **ACP** (Agent Client Protocol) — no API keys are
 stored in VS Code, and no Hermes configuration is modified.
 
-![RadCode chat view, dark](https://raw.githubusercontent.com/lainiceanuraduc/RadCode/main/docs/ui-dark.png)
+![RadCode chat view](https://raw.githubusercontent.com/lainiceanuraduc/RadCode/main/readme_image.png)
 
 ## Disclosure: this was vibe-coded
 
