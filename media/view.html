@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src {{cspSource}} data:; style-src {{cspSource}}; script-src 'nonce-{{nonce}}'; connect-src 'none'; font-src {{cspSource}};">
+<link rel="stylesheet" href="{{styleUri}}"><title>Hermes Agent — RadCode</title>
+</head>
+<body>
+<header class="brand"><span class="mark" aria-hidden="true">H</span><div><strong>HERMES</strong><span class="subtitle">Your workspace, with an agent.</span></div><button id="settings" class="quiet" title="Extension settings" aria-label="Extension settings">⚙</button></header>
+<div id="text-size-row" class="text-size-row" hidden>
+<label for="text-size">Text size</label>
+<input id="text-size" type="range" min="10" max="20" step="1" value="13" aria-label="Text size in pixels">
+<output id="text-size-value" for="text-size">13</output>
+</div>
+<nav class="tabs" role="tablist" aria-label="Hermes sections">
+<button role="tab" aria-selected="true" aria-controls="chat" id="tab-chat" data-tab="chat">Chat</button>
+<button role="tab" aria-selected="false" aria-controls="agents" id="tab-agents" data-tab="agents" tabindex="-1">Subagents</button>
+<button role="tab" aria-selected="false" aria-controls="features" id="tab-features" data-tab="features" tabindex="-1">Features</button>
+</nav>
+<div id="error" role="alert" hidden><span id="error-text"></span><button id="dismiss-error" aria-label="Dismiss error">×</button></div>
+<section id="chat" role="tabpanel" aria-labelledby="tab-chat">
+<div class="session-bar"><label class="sr-only" for="sessions">Conversation</label><select id="sessions"><option value="">No conversation</option></select><input id="rename-input" class="rename-input" hidden maxlength="120" aria-label="Conversation name" placeholder="Name this conversation"><button id="new" class="quiet" title="New conversation" aria-label="New conversation">＋</button><button id="rename" class="quiet" title="Rename this conversation" aria-label="Rename this conversation">✎</button><button id="history" class="quiet" title="Resume a conversation" aria-label="Resume a conversation">↶</button></div>
+<div id="route" class="route" hidden><button id="model" class="model" title="Change provider and model">Select model</button><label for="effort">Thinking effort</label><select id="effort" aria-label="Thinking effort"><option value="default">Default</option></select><span id="effort-note" class="caption"></span><label class="thinking-label"><input id="show-thinking" type="checkbox">Show reasoning</label></div>
+<div id="warning" class="warning" hidden></div>
+
+<div id="permissions" class="permissions" aria-live="polite"></div>
+<div id="welcome" class="welcome"><span class="eyebrow">RADCODE · VERSION 0.1.16</span><h1>Make room for<br>your next idea.</h1><p>Chat with Hermes in your project. Inspect its tool activity and give focused work to configurable agents.</p><button id="connect">Connect to Hermes</button><p class="caption">Uses your existing Hermes login and profile.<br>Tools can modify files and run commands.</p></div>
+<h2 id="session-title" class="session-title" hidden></h2>
+<div id="transcript" role="log" aria-label="Conversation transcript" aria-live="off" tabindex="0"></div>
+<div class="status-line"><span class="status-spinner" data-state="idle" aria-hidden="true"><i class="dot"></i><i class="dot"></i><i class="dot"></i></span><span id="status" role="status" aria-live="polite">Not connected</span><label class="sr-only" for="mode">Approval mode</label><select id="mode" class="mode-select" title="When Hermes must ask before editing files" hidden><option value="">Approvals</option></select><div class="context-meter" id="context-meter" hidden><div class="meter" role="progressbar" id="context-bar" aria-label="Context used" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="context-fill"></span></div><span id="context-text" class="caption">—</span><button type="button" id="compact" class="quiet" title="Summarise older turns to free context (Hermes /compress)">Compact</button></div></div>
+<form id="composer"><label class="sr-only" for="message">Message Hermes</label><textarea id="message" rows="2" placeholder="Ask, build, or explore…" aria-label="Message Hermes" maxlength="200000"></textarea>
+<div class="context-row" id="context-row">
+<div class="context-pick"><span id="editor-chip" class="editor-chip" hidden></span></div>
+<ul id="context-list" class="context-list" aria-label="Attached files" aria-live="polite"></ul>
+<ul id="image-list" class="context-list" aria-label="Pasted images" aria-live="polite"></ul>
+<div id="context-menu" class="context-menu" role="dialog" aria-label="Workspace files" hidden>
+<label class="sr-only" for="context-search">Filter workspace files</label>
+<input id="context-search" type="search" placeholder="Filter files…" autocomplete="off">
+<div id="context-current" class="context-current" hidden></div>
+<ul id="context-results" role="listbox" aria-label="Workspace files"></ul>
+<p class="caption">Enter attaches the first match. Attachments are read by the editor at send time.</p>
+</div>
+</div>
+<div class="composer-actions"><button type="button" id="context-toggle" class="quiet context-button" aria-expanded="false" aria-controls="context-menu" title="Add files from this workspace as context">＋ Context</button><button type="button" id="screenshot" class="quiet" title="Capture a screenshot for the model">◎ Screenshot</button><span class="caption">Ctrl/⌘ Enter</span><button type="button" id="stop" class="secondary" title="Stop the running turn" disabled><span aria-hidden="true">■</span> Stop</button><button type="submit" id="send" disabled><span aria-hidden="true">▶</span> Send</button></div></form>
+</section>
+<section id="agents" role="tabpanel" aria-labelledby="tab-agents" hidden>
+<div class="section-title"><div><h1>Your agent team</h1><p class="caption">Named workers. Separate conversations.</p></div><button id="new-preset">New preset</button></div>
+<p class="notice">Workers share workspace files and your Hermes profile, not conversation history. Use separate worktrees for concurrent edits. These presets do not change Hermes’s native delegate_task configuration.</p>
+<div id="preset-list"></div>
+<form id="preset-form" hidden>
+<h2 id="preset-heading">Configure worker</h2><input id="preset-id" type="hidden">
+<label for="preset-name">Agent name</label><input id="preset-name" required maxlength="60" placeholder="Reviewer">
+<label for="preset-provider">Provider</label><input id="preset-provider" maxlength="200" placeholder="Blank = profile default">
+<label for="preset-model">Model</label><input id="preset-model" maxlength="200" placeholder="Blank = profile default">
+<div class="inline"><label for="preset-effort">Worker effort</label><button type="button" id="check-effort" class="quiet">Check supported levels</button></div>
+<select id="preset-effort"><option value="default">Default</option></select><p id="preset-note" class="caption">Choose a provider and model to discover supported effort levels.</p>
+<label for="preset-instructions">Instructions</label><textarea id="preset-instructions" rows="5" maxlength="16000" placeholder="Purpose, boundaries, and expected output"></textarea>
+<div class="actions"><button type="button" id="cancel-preset" class="secondary">Cancel</button><button type="submit">Save preset</button></div>
+</form>
+<div id="task-box"><label for="worker-task">Task for a worker</label><textarea id="worker-task" rows="3" maxlength="100000" placeholder="Enter a task, then Run a preset above."></textarea><p id="worker-limit" class="caption"></p></div>
+<h2>Worker runs</h2><div id="worker-runs"><p class="caption">No workers started yet.</p></div>
+</section>
+<section id="features" role="tabpanel" aria-labelledby="tab-features" hidden>
+<div class="section-title"><div><h1>Explore Hermes</h1><p class="caption">The engine is more than a chat box.</p></div><span class="badge">v0.1.16</span></div>
+<p>RadCode exposes chat, tools, session controls, and configurable workers. Other features remain managed by Hermes.</p>
+<div class="feature-card"><h2>Workspace agent <span class="badge">In RadCode</span></h2><p>Streaming chat, resumable sessions, selected-code context, tool output, permission prompts, cancellation, model switching, and model-aware effort.</p></div>
+<div class="feature-card"><h2>Memory & skills</h2><p>Persistent memory, session search, project context, reusable skills, and skill curation. Applied by your existing Hermes profile.</p><button class="text-link" data-doc="user-guide/features/skills">Skills documentation ↗</button></div>
+<div class="feature-card"><h2>Tools & integrations</h2><p>Terminal, files, browser, web search, code execution, MCP, plugins, and tool discovery. Available tools depend on your profile.</p><button class="text-link" data-doc="user-guide/features/tools">Tools documentation ↗</button></div>
+<div class="feature-card"><h2>Automation & teams</h2><p>Native delegation, persistent goals, cron, hooks, kanban, bot routines, and multi-profile workflows. Admin screens are not included in v0.1.</p><button class="text-link" data-doc="user-guide/features/delegation">Delegation documentation ↗</button></div>
+<div class="feature-card"><h2>Media & other surfaces</h2><p>Voice, vision, image generation, messaging gateways, desktop, dashboard, and API integrations. Dedicated media controls are planned, not implemented.</p><button class="text-link" data-doc="user-guide/features/overview">Full feature overview ↗</button></div>
+<button id="logs" class="secondary">Show connection log</button>
+</section>
+<script nonce="{{nonce}}" src="{{scriptUri}}"></script>
+</body></html>

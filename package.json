@@ -1,0 +1,305 @@
+{
+  "name": "radcode-hermes",
+  "displayName": "RadCode \u2014 Hermes Agent",
+  "description": "Hermes Agent workspace chat, model-aware thinking controls, and configurable worker agents.",
+  "version": "0.1.16",
+  "publisher": "radcode-local",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "AI",
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onView:radcode.chat"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "Hermes executes tools in your workspace. Trust is required."
+    },
+    "virtualWorkspaces": false
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "radcode.open",
+        "title": "Hermes: Open RadCode"
+      },
+      {
+        "command": "radcode.newSession",
+        "title": "Hermes: New Session",
+        "icon": "$(add)"
+      },
+      {
+        "command": "radcode.renameSession",
+        "title": "Hermes: Rename Session",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "radcode.attachSelection",
+        "title": "Hermes: Attach Editor Selection"
+      },
+      {
+        "command": "radcode.model",
+        "title": "Hermes: Change Model / Provider"
+      },
+      {
+        "command": "radcode.settings",
+        "title": "Hermes: Extension Settings",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "radcode.logs",
+        "title": "Hermes: Show Connection Log"
+      },
+      {
+        "command": "radcode.compact",
+        "title": "Hermes: Compact Session",
+        "icon": "$(fold)"
+      },
+      {
+        "command": "radcode.screenshot",
+        "title": "Hermes: Screenshot for Model",
+        "icon": "$(device-camera)"
+      },
+      {
+        "command": "radcode.mcp",
+        "title": "Hermes: MCP Servers",
+        "icon": "$(plug)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "radcode",
+          "title": "Hermes",
+          "icon": "media/hermes.svg"
+        }
+      ]
+    },
+    "views": {
+      "radcode": [
+        {
+          "type": "webview",
+          "id": "radcode.chat",
+          "name": "Hermes Agent",
+          "contextualTitle": "RadCode"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "radcode.newSession",
+          "when": "view == radcode.chat",
+          "group": "navigation"
+        },
+        {
+          "command": "radcode.renameSession",
+          "when": "view == radcode.chat",
+          "group": "navigation"
+        },
+        {
+          "command": "radcode.compact",
+          "when": "view == radcode.chat",
+          "group": "navigation"
+        },
+        {
+          "command": "radcode.settings",
+          "when": "view == radcode.chat",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "radcode.attachSelection",
+          "when": "editorHasSelection",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "RadCode Hermes",
+      "properties": {
+        "radcode.hermesPath": {
+          "type": "string",
+          "default": "hermes",
+          "scope": "machine",
+          "description": "Hermes executable; use an absolute path if the editor PATH does not include Hermes."
+        },
+        "radcode.hermesHome": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "Optional absolute HERMES_HOME for an existing profile. Blank inherits the environment."
+        },
+        "radcode.pythonPath": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "Hermes Python interpreter for model-aware effort controls. Blank discovers a standard source installation. Never use an unrelated system Python."
+        },
+        "radcode.maxParallelAgents": {
+          "type": "integer",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 8,
+          "description": "Maximum simultaneously running RadCode worker sessions. Does not change Hermes native delegation limits."
+        },
+        "radcode.accent": {
+          "type": "string",
+          "enum": [
+            "yellow",
+            "amber",
+            "orange",
+            "lime",
+            "teal",
+            "violet",
+            "magenta",
+            "blue"
+          ],
+          "enumDescriptions": [
+            "Warm yellow (default)",
+            "Deep amber",
+            "Orange",
+            "Lime green",
+            "Teal",
+            "Violet",
+            "Magenta",
+            "Blue"
+          ],
+          "default": "yellow",
+          "description": "Highlight colour for focus rings, links, the active tab and the composer."
+        },
+        "radcode.fontFamily": {
+          "type": "string",
+          "enum": [
+            "editor",
+            "system",
+            "monospace",
+            "serif",
+            "custom"
+          ],
+          "enumDescriptions": [
+            "Follow the editor font",
+            "The editor's UI (sans) font",
+            "Monospace",
+            "Serif",
+            "Use radcode.fontFamilyCustom"
+          ],
+          "default": "editor",
+          "description": "Font family for the RadCode chat view."
+        },
+        "radcode.fontFamilyCustom": {
+          "type": "string",
+          "default": "",
+          "description": "CSS font-family list used when radcode.fontFamily is 'custom'."
+        },
+        "radcode.fontSize": {
+          "type": "integer",
+          "default": 13,
+          "minimum": 10,
+          "maximum": 20,
+          "description": "Base font size in pixels for the RadCode chat view."
+        },
+        "radcode.lineHeight": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 2.2,
+          "description": "Line height multiplier for the chat view. 0 follows the editor."
+        },
+        "radcode.compact": {
+          "type": "boolean",
+          "default": false,
+          "description": "Tighter spacing for narrow sidebars."
+        },
+        "radcode.mcpServers": {
+          "type": "array",
+          "default": [],
+          "scope": "machine",
+          "markdownDescription": "MCP servers handed to Hermes for every session (ACP `mcpServers`). stdio: `{\"name\": \"fs\", \"command\": \"npx\", \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/path\"], \"env\": {}}`. Remote: `{\"name\": \"docs\", \"url\": \"https://example.com/mcp\", \"headers\": {\"Authorization\": \"Bearer ...\"}}`. Hermes registers their tools; open a new session after changing this list.",
+          "items": {
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Server name: letters, digits, dots, underscores, hyphens."
+              },
+              "command": {
+                "type": "string",
+                "description": "stdio: executable to launch."
+              },
+              "args": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "stdio: arguments."
+              },
+              "env": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "stdio: extra environment variables."
+              },
+              "url": {
+                "type": "string",
+                "description": "http/sse: endpoint URL."
+              },
+              "headers": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "http/sse: request headers."
+              }
+            }
+          }
+        },
+        "radcode.screenshotCommand": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "Optional custom capture command for `Hermes: Screenshot for Model`; it receives the output PNG path as its only argument. Blank uses Playwright for URLs and ImageMagick import for the desktop."
+        },
+        "radcode.imagePaste": {
+          "type": "boolean",
+          "default": true,
+          "description": "Allow pasting images into the composer when the agent advertises image prompts."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc --noEmit && node scripts/build.mjs",
+    "test": "tsx --test test/*.test.ts",
+    "test:python": "python3 -m unittest discover -s test -p '*_test.py' -v",
+    "test:ui": "node scripts/ui-smoke.mjs",
+    "test:live": "tsx scripts/live-smoke.ts",
+    "test:worker": "tsx scripts/worker-smoke.ts",
+    "package": "npm run compile && vsce package --no-dependencies --allow-missing-repository",
+    "vscode:prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.96.0",
+    "@vscode/vsce": "^4.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.0",
+    "tsx": "^4.20.0",
+    "@playwright/test": "^1.56.0"
+  },
+  "dependencies": {
+    "dompurify": "^3.3.0",
+    "marked": "^16.0.0"
+  }
+}

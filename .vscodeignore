@@ -1,0 +1,17 @@
+node_modules/**
+out/**
+src/**
+test/**
+scripts/**
+docs/research/**
+docs/*.png
+docs/extension-host-result.json
+bridge/__pycache__/**
+**/__pycache__/**
+tsconfig.json
+package-lock.json
+.gitignore
+*.vsix
+.vscode/**
+dist/*.map
+media/fonts/*.zip

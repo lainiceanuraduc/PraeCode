@@ -1,0 +1,1 @@
+let text='';process.stdin.on('data',b=>text+=b);process.stdin.on('end',()=>{const r=JSON.parse(text);console.log(JSON.stringify({ok:true,result:{values:['low','high'],note:r.provider+':'+r.model}}));});
