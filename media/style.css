@@ -8,7 +8,7 @@
  * The :root variables below are the single source of truth. `body` and `button` here are
  * fallbacks only; the authoritative rules use var(--font-body) / var(--font-display) and
  * they come AFTER :root so they always win over the editor's --vscode-font-family. */
-:root{--font-display:'Pixelzone',monospace;--font-body:'Valve',system-ui,sans-serif;/* Smallest text in the view: scales with radcode.fontSize, floor 13px. */--font-min:max(13px, calc(var(--ui-size,13px) * 0.85));/* Primary actions and navigation: three times the base size. */--font-action:calc(var(--ui-size,13px) * 1.7)}
+:root{--font-display:'Pixelzone',monospace;--font-body:'Valve',system-ui,sans-serif;/* Smallest text in the view: scales with radcode.fontSize, floor 13px. */--font-min:max(13px, calc(var(--ui-size,13px) * 0.85));/* Primary actions and navigation: three times the base size. */--font-action:calc(var(--ui-size,13px) * 1.7);/* Headers, logo and titles: exactly 15% above the message text. */--font-title:calc(var(--ui-size,13px) * 1.15)}
 body{font-family:var(--font-body,'Valve',system-ui,sans-serif)}
 button,input,textarea,select{font-family:var(--font-body,'Valve',system-ui,sans-serif)}
 button{font-family:var(--font-display,'Pixelzone',monospace)}
@@ -172,3 +172,9 @@ dialog,.approval-details{max-height:80vh;overflow:auto}
  padding:10px 18px;border-radius:6px;cursor:pointer}
 #connect:hover:not(:disabled),.welcome button:hover:not(:disabled){background:var(--accent-hover);border-color:var(--accent-hover)}
 #connect:disabled{opacity:.6;cursor:default}
+
+/* ---- Header level text: 15% larger than messages --------------------------------
+ * The wordmark, the logo mark, the session title and every h1/h2 (app and panel
+ * headings) share one size, derived from the body size so the 15% gap survives a
+ * change of radcode.fontSize. Literal sizes here are what let the ratio drift. */
+.brand strong,.brand .mark,.session-title,h1,h2{font-size:var(--font-title)}

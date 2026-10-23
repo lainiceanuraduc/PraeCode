@@ -1,10 +1,10 @@
 # RadCode — Hermes Agent for VS Code
 
-[![Version](https://img.shields.io/badge/version-0.1.16-e5b93c)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.17-e5b93c)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-e5b93c)](LICENSE)
 [![GitHub](https://img.shields.io/badge/source-GitHub-e5b93c)](https://github.com/lainiceanuraduc/RadCode)
 
-A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.16.
+A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.17.
 It talks to your existing Hermes installation over **ACP** (Agent Client Protocol) — no API keys are
 stored in VS Code, and no Hermes configuration is modified.
 
@@ -14,7 +14,7 @@ stored in VS Code, and no Hermes configuration is modified.
 
 **Almost all of this code was written by AI agents — largely by Hermes Agent itself — driven by
 natural-language instructions, screenshots and corrections.** That is what "vibe-coded" means here:
-a human decided what it should do and rejected what was wrong, but did not type most of the
+the author decided what it should do and rejected what was wrong, but did not type most of the
 implementation.
 
 What that does and does not imply:
@@ -24,7 +24,7 @@ What that does and does not imply:
   smoke suite, and a live ACP handshake. Numbers such as the per-model effort ladders were read back
   from the provider, and several bugs were found exactly because a claim looked plausible but was not.
 - **Not audited line by line.** No independent security review has been done. The code has not been
-  read end-to-end by a human, and AI-written code has failure modes that tests miss: subtly wrong
+  read end-to-end by a developers or reviewers, and AI-written code has failure modes that tests miss: subtly wrong
   edge-case handling, plausible-looking abstractions, and comments that describe intent rather than
   behaviour.
 - **Treat it accordingly.** Read the source before granting broad autonomy. This extension can run
@@ -203,7 +203,7 @@ npm test              # unit tests (transport, ACP, presets, sessions, control)
 npm run test:python   # Hermes-side helper tests (needs Hermes' Python)
 npm run test:ui       # Playwright: rendering, CSP, sanitization, capability select, a11y labels
 npm run test:live     # real ACP handshake + session + effort read-back
-npm run package       # produces radcode-hermes-0.1.16.vsix
+npm run package       # produces radcode-hermes-0.1.17.vsix
 ```
 
 The extension-host test (`test/extension-host.ts`) is run in a real editor:

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.17
+
+- Header-level text — the HERMES wordmark, the logo mark, the session title and every panel heading —
+  is now exactly 15% larger than message text (`--font-title`), instead of the previous 1.23–1.46×
+  drift caused by per-element literals. The ratio follows `radcode.fontSize`, and the UI smoke test
+  asserts it.
+
 ## 0.1.16
 
 - Slimmer chrome: header 150 → 92 px, footer 250 → 119 px (23% of the view), by settling the action

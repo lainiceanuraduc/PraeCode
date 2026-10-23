@@ -137,6 +137,18 @@ try{
  }
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth),false,
   'the 3x action type must not overflow horizontally');
+ // Header-level text (wordmark, logo mark, session title, h1/h2) sits 15% above message text.
+ const titleRatio=await page.evaluate(()=>{
+  const px=s=>{const e=document.querySelector(s);return e?parseFloat(getComputedStyle(e).fontSize):null;};
+  // Message text inherits the body size; fall back to it when the transcript is empty.
+  const body=px('.message .body')??px('#transcript .message .body')??parseFloat(getComputedStyle(document.body).fontSize);
+  const titles=['.brand strong','.mark','.session-title','#features h1','#features h2'].map(px).filter(v=>v);
+  return {body,titles,ratio:titles.length?+(titles[0]/body).toFixed(3):null,
+          uniform:new Set(titles).size===1};
+ });
+ assert.equal(titleRatio.uniform,true,'every header/title uses one size');
+ assert.ok(Math.abs(titleRatio.ratio-1.15)<0.02,`header text is ${titleRatio.ratio}x the message text, expected 1.15x`);
+
  // Compact sits with the context meter; Stop is always on screen but only enabled mid-turn.
  assert.equal(await page.evaluate(()=>document.getElementById('compact').parentElement.id),'context-meter',
   'Compact belongs beside the context meter');
