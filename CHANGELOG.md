@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.18
+
+- Re-release of 0.1.17 with no functional changes: rebuilt and version-stamped so the artifact
+  matches the published tag.
+
 ## 0.1.17
 
 - Header-level text — the HERMES wordmark, the logo mark, the session title and every panel heading —

@@ -54,7 +54,7 @@ export class AcpClient extends EventEmitter {
     };
     try {
       this.initialized = await rpc.request('initialize', {
-        protocolVersion: 1, clientCapabilities: {}, clientInfo: { name: 'radcode-hermes', version: '0.1.17' }
+        protocolVersion: 1, clientCapabilities: {}, clientInfo: { name: 'radcode-hermes', version: '0.1.18' }
       });
       return this.initialized;
     } catch (error) { this.dispose(); throw error; }

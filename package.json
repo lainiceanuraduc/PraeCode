@@ -2,7 +2,7 @@
   "name": "radcode-hermes",
   "displayName": "RadCode \u2014 Hermes Agent",
   "description": "Hermes Agent workspace chat, model-aware thinking controls, and configurable worker agents.",
-  "version": "0.1.17",
+  "version": "0.1.18",
   "publisher": "lainiceanuraduc",
   "license": "MIT",
   "engines": {
