@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.25
+
+- Use bundled Public Pixel for all webview text, including messages, code and profile editors.
+  Preserve size, bold and italic hierarchy; retire font-family overrides.
+- Allow narrow tabs to scroll and give composer actions two columns so pixel labels do not overlap.
+
 ## 0.1.24
 
 - **The project is now branded `PraeCode`**, published as `lainiceanuraduc.praecode`, display name

@@ -18,7 +18,7 @@ export interface PermissionRequest {
 export interface ContextUsage {used:number|null;limit:number|null;messages:number;compactions:number;}
 
 /** Everything `radcode.accent` / font settings resolve to. */
-export interface Appearance {accent:string;fontFamily:string;fontSize:number;lineHeight:number;compact:boolean;}
+export interface Appearance {accent:string;fontSize:number;lineHeight:number;compact:boolean;}
 
 /** Model facts the picker shows for the row currently selected there (read from Hermes by the host). */
 export interface ModelDetailsView {

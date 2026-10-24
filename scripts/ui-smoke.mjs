@@ -11,7 +11,7 @@ try{
   const name=new URL(route.request().url()).pathname.slice(1)||'media/view.html';
   let body=await fs.readFile(path.resolve(name));
   if(name.endsWith('.html'))body=Buffer.from(body.toString().replaceAll('{{cspSource}}','http://radcode.test').replaceAll('{{nonce}}','testnonce').replaceAll('{{styleUri}}','http://radcode.test/media/style.css').replaceAll('{{scriptUri}}','http://radcode.test/dist/webview.js'));
-  await route.fulfill({body,contentType:name.endsWith('.html')?'text/html':name.endsWith('.css')?'text/css':'text/javascript'});
+  await route.fulfill({body,contentType:name.endsWith('.html')?'text/html':name.endsWith('.css')?'text/css':name.endsWith('.ttf')?'font/ttf':'text/javascript'});
  });
  await page.goto('http://radcode.test/');
  await page.getByRole('button',{name:'Connect to Hermes',exact:true}).click();
@@ -107,7 +107,17 @@ try{
  assert.equal(await page.getByLabel('Message Hermes').inputValue(),'typed while failing','a newer draft is never overwritten');
  // Accent is the yellow highlight, not the editor's light-blue focus/link colour.
  assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()),'#a8c93a','the settings accent is applied');
- assert.equal(await page.evaluate(()=>getComputedStyle(document.body).fontFamily.toLowerCase().includes('mono')),true,'the font family setting is applied');
+ // Legacy font settings in these fixtures must no longer override the bundled family.
+ const assertPixel=async()=>{
+  await page.evaluate(()=>document.fonts.ready);
+  assert.equal(await page.evaluate(()=>[...document.fonts].some(f=>f.family==='Public Pixel'&&f.status==='loaded')),true,'the bundled font file loaded');
+  const wrong=await page.evaluate(()=>[...document.querySelectorAll('body,body *')]
+   .filter(el=>el.textContent?.trim()||el.matches('input,textarea,select'))
+   .filter(el=>!getComputedStyle(el).fontFamily.startsWith('"Public Pixel"'))
+   .map(el=>`${el.tagName}#${el.id}: ${getComputedStyle(el).fontFamily}`));
+  assert.deepEqual(wrong,[],'every text element uses Public Pixel');
+ };
+ await assertPixel();
  assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('composer')).borderTopColor),'rgb(168, 201, 58)','composer focus ring uses the chosen accent');
  await page.getByLabel('Message Hermes').fill('');
  // Regression guards: no text below the 13px floor, and a pasted image must actually decode
@@ -219,6 +229,7 @@ const details=await page.locator('#model-details').textContent();
 assert.match(details,/Mistral AI/,'the lab name is shown');
 assert.match(details,/131,072 tokens/,'the context window is shown');
 assert.match(details,/none, high/,'the thinking/effort ladder is shown');
+await assertPixel();
 await page.locator('#picker-use').click();
 assert.deepEqual(await page.evaluate(()=>{const m=window.sent.at(-1);return {type:m.type,id:m.id,value:m.value};}),
  {type:'useModel',id:'s',value:'mistral:codestral'});
@@ -240,6 +251,7 @@ await page.evaluate(()=>window.postMessage({type:'profile',home:'/home/me/.herme
  {id:'memory',title:'Agent memory',description:'Notes.',path:'/home/me/.hermes/memories/MEMORY.md',content:'',exists:false}]},'*'));
 await page.locator('#profile-files .profile-card').first().waitFor();
 assert.equal(await page.locator('#profile-files .profile-card').count(),3,'SOUL.md and both memory files');
+await assertPixel();
 assert.equal(await page.getByLabel('SOUL.md contents').inputValue(),'Be terse.');
 assert.equal(await page.locator('#profile-files .profile-save').first().isDisabled(),true,'Save waits for an edit');
 await page.getByLabel('SOUL.md contents').fill('Be terse and kind.');
@@ -260,6 +272,30 @@ await page.evaluate(()=>window.postMessage({type:'permissionSettled',requestId:'
 await page.waitForTimeout(50);
 await page.getByRole('tab',{name:'Chat',exact:true}).click();
 
+// Exercise rich text and code, not just the shell's inherited family.
+await page.getByLabel('Dismiss error').click();
+await page.evaluate(()=>window.postMessage({type:'state',sessions:[{id:'s',title:'Pixel typography',kind:'chat',status:'idle',
+ messages:[{id:'u',role:'user',text:'Use Public Pixel everywhere.'},
+ {id:'r',role:'thinking',text:'Checking typography.'},
+ {id:'a',role:'assistant',text:'One family: **bold**, *italic*, and `inline code`.\n\n```ts\nconst font = "Public Pixel";\n```'}],
+ info:{model:'codestral',provider:'mistral',effort:'high',capabilities:{values:['none','high'],note:''}}}],
+ activeId:'s',presets:[],recent:[],appearance:{accent:'yellow',fontSize:16,lineHeight:0,compact:false}},'*'));
+await page.locator('#transcript pre code').waitFor();
+await assertPixel();
+assert.equal(await page.locator('#transcript em').evaluate(el=>getComputedStyle(el).fontStyle),'italic');
+assert.ok(await page.locator('#transcript strong').evaluate(el=>Number(getComputedStyle(el).fontWeight)>=700));
+for(const width of [320,430]){
+ await page.setViewportSize({width,height:900});
+ for(const size of [13,16,20]){
+  await page.evaluate(size=>document.documentElement.style.setProperty('--ui-size',`${size}px`),size);
+  const overflow=await page.evaluate(()=>[...document.querySelectorAll('.composer-actions button')]
+   .filter(el=>el.scrollWidth>el.clientWidth).map(el=>el.id));
+  assert.deepEqual(overflow,[],`action labels fit at ${width}px / ${size}px`);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+ }
+}
+await page.setViewportSize({width:430,height:900});
+await page.evaluate(()=>document.documentElement.style.setProperty('--ui-size','16px'));
 // ---- Screenshots ---------------------------------------------------------------
 await page.screenshot({path:'docs/ui-dark.png',fullPage:true});
  await page.route('http://radcode.test/theme.css',route=>route.fulfill({contentType:'text/css',body:':root{--vscode-sideBar-background:#fafafa;--vscode-editor-background:#fff;--vscode-foreground:#242424;--vscode-input-background:#fff;--vscode-input-foreground:#242424;--vscode-descriptionForeground:#545454;--vscode-widget-border:#c8c8c8;--vscode-button-background:#005fb8;--vscode-button-foreground:#fff;}'}));

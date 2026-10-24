@@ -1,10 +1,10 @@
 # PraeCode — Hermes Agent for VS Code
 
-[![Version](https://img.shields.io/badge/version-0.1.24-e5b93c)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.25-e5b93c)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-e5b93c)](LICENSE)
 [![GitHub](https://img.shields.io/badge/source-GitHub-e5b93c)](https://github.com/lainiceanuraduc/PraeCode)
 
-A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.24.
+A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.25.
 It talks to your existing Hermes installation over **ACP** (Agent Client Protocol) — no API keys are
 stored in VS Code, and no Hermes configuration is modified.
 
@@ -57,7 +57,13 @@ Extension Development Host.
 > missing.
 
 
-## What's new in 0.1.24
+## What's new in 0.1.25
+
+- Public Pixel throughout the extension: messages, code, controls and profile editors.
+- Preserved size, bold and italic variations; removed font-family overrides.
+- Two-column composer actions and scrollable tabs keep the wider pixel text usable.
+
+## Previous release: 0.1.24
 
 - **Model picker modal.** The model button opens a dialog with two lists: **Favorites** (kept by the
   extension in VS Code global state) and **All models** for the selected provider. Star a model to
@@ -90,16 +96,18 @@ Extension Development Host.
 | Prompt | The composer is resizable from a grab bar above it (drag, or arrow keys) and keeps its height between reloads |
 | Subagents | Named worker presets (provider, model, effort, instructions), isolated sessions per run, parallel-run cap, "Use result" into the main chat |
 | Context | Files attached to a message: the editor you are looking at is offered as a one-click chip, `＋ Context` picks more from the workspace, each chip opens or removes the file. The editor host reads the bytes at send time, so you always send the current file; the transcript shows names, not file bodies. Workspace-trust enforcement |
-| Appearance | `radcode.accent` picks the highlight colour (yellow default, 8 palettes), `radcode.fontFamily`/`fontSize`/`lineHeight`/`compact` restyle the view. Changes apply live |
+| Appearance | `radcode.accent` picks the highlight colour (yellow default, 8 palettes), `radcode.fontSize`/`lineHeight`/`compact` restyle the view. All text uses Public Pixel. Changes apply live |
 | Profile | "Features" tab reads the profile on disk: `SOUL.md`, `memories/USER.md`, `memories/MEMORY.md`, each editable with an explicit Save |
 | Diagnostics | "PraeCode Hermes" output channel with secret redaction |
 
 ## Bundled font, and why it changed
 
-The UI's display face (buttons, tabs, wordmark, session title — never message text) is
+All extension UI text (including messages, code, controls and profile editors) uses
 **Public Pixel** by GGBotNet, licensed **CC0 1.0 (public domain)**: `media/fonts/PublicPixel.ttf`, with
 provenance in `media/fonts/PublicPixel.LICENSE.txt`. CC0 permits redistribution inside a published
-extension.
+extension. Bold and italic are synthesized from the bundled regular face; sizes retain the UI hierarchy.
+The retired `radcode.fontFamily` and `radcode.fontFamilyCustom` settings no longer affect the view.
+Native editor UI and dialogs remain controlled by VS Code. Unsupported glyphs use a fallback font.
 
 Until 0.1.22 that face was *Valve* by Typodermic Fonts, which ships under a **Desktop-only** EULA.
 That agreement forbids embedding the font software in "an app, game, desktop application, plug-in,
@@ -123,7 +131,6 @@ Marketplace, so no downloadable package carries it.
 | `radcode.pythonPath` | *(empty)* | Hermes' own Python interpreter for model-aware effort controls. Only needed if `hermes --print-runtime-command` is unavailable. Never point this at an unrelated system Python. |
 | `radcode.maxParallelAgents` | `2` | How many PraeCode worker sessions may run at once. |
 | `radcode.accent` | `yellow` | Highlight colour: yellow, amber, orange, lime, teal, violet, magenta, blue. Drives focus rings, links, active tab, composer and attachment chips. Light editor themes automatically get a darkened text variant. |
-| `radcode.fontFamily` | `editor` | `editor` (inherit), `system`, `monospace`, `serif`, or `custom` with `radcode.fontFamilyCustom`. |
 | `radcode.fontSize` | `16` | Base size in px (10–20). Tabs, wordmark, logo and the text-size control sit 20% above it; metadata keeps a 13px floor. |
 | `radcode.lineHeight` | `0` | Line-height multiplier; `0` follows the editor. |
 | `radcode.compact` | `false` | Tighter spacing for narrow sidebars. |
@@ -246,7 +253,7 @@ npm test              # unit tests (transport, ACP, presets, sessions, control)
 npm run test:python   # Hermes-side helper tests (needs Hermes' Python)
 npm run test:ui       # Playwright: rendering, CSP, sanitization, capability select, a11y labels
 npm run test:live     # real ACP handshake + session + effort read-back
-npm run package       # produces praecode-0.1.24.vsix
+npm run package       # produces praecode-0.1.25.vsix
 ```
 
 The extension-host test (`test/extension-host.ts`) is run in a real editor:

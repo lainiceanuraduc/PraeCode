@@ -18,7 +18,7 @@ import {PresetRepository} from '../domain/PresetRepository';
 import {ChatViewProvider} from '../presentation/ChatViewProvider';
 import {webviewMessageError} from '../domain/MessageLimits';
 
-import {mcpServers,appearance,sanitizedCustomFont,clampTextSize} from './Settings';
+import {mcpServers,appearance,clampTextSize} from './Settings';
 import {readProfile,saveProfile} from './ProfileStore';
 import {toggleFavorite} from '../domain/ModelCatalog';
 import {editorContext,readAttachments,readImages} from './Inputs';
@@ -90,7 +90,7 @@ export class RadCodeExtension implements vscode.Disposable {
    vscode.workspace.onDidOpenTextDocument(mirror),
    vscode.workspace.onDidCloseTextDocument(mirror));
   this.disposables.push(vscode.workspace.onDidChangeConfiguration(e=>{
-   const live=['radcode.accent','radcode.fontFamily','radcode.fontFamilyCustom','radcode.fontSize',
+   const live=['radcode.accent','radcode.fontSize',
                'radcode.lineHeight','radcode.compact','radcode.mcpServers','radcode.maxParallelAgents'];
    if(live.some(key=>e.affectsConfiguration(key)))this.publish();
    if(['radcode.hermesPath','radcode.hermesHome','radcode.pythonPath'].some(k=>e.affectsConfiguration(k))){
@@ -181,8 +181,6 @@ export class RadCodeExtension implements vscode.Disposable {
    this.recentSignature=signature;
    void this.context.workspaceState.update('recentSessions',combined);
   }
-
-  this.view.post({type:'fontCustom',value:sanitizedCustomFont()});
 
   // The live `usage_update` stream is fresher than any inspect, so it wins over the cached info.
   const usage=this.service?.usage(activeId);

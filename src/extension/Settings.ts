@@ -5,7 +5,7 @@
  */
 import * as vscode from 'vscode';
 
-export interface Appearance {accent:string;fontFamily:string;fontSize:number;lineHeight:number;compact:boolean;}
+export interface Appearance {accent:string;fontSize:number;lineHeight:number;compact:boolean;}
 
  /**
   * MCP servers are configuration, not code: they are passed to session/new exactly as ACP defines
@@ -44,7 +44,7 @@ export function appearance(fallbackFontSize?:number):Appearance{
   // default; the caller passes the value mirrored in extension state so the slider still holds.
   const configured=c.get<number>('fontSize',0);
   const fontSize=clampTextSize(configured>0?configured:(fallbackFontSize??16));
-  return {accent:c.get<string>('accent','yellow'),fontFamily:c.get<string>('fontFamily','editor'),
+  return {accent:c.get<string>('accent','yellow'),
           fontSize,lineHeight:c.get<number>('lineHeight',0),compact:c.get<boolean>('compact',false)};
  }
 
@@ -52,10 +52,4 @@ export function appearance(fallbackFontSize?:number):Appearance{
 export function clampTextSize(value:number):number{
  const n=Math.round(Number(value));
  return Number.isFinite(n)?Math.min(20,Math.max(10,n)):13;
-}
-
-/** Custom font lists are CSS, so only letters, digits, quotes, commas, spaces and hyphens may pass. */
-export function sanitizedCustomFont():string{
- const custom=vscode.workspace.getConfiguration('radcode').get<string>('fontFamilyCustom','').trim();
- return /^[\w\s,'"-]{1,200}$/.test(custom)?custom:'';
 }

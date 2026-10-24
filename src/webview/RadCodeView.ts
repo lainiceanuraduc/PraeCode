@@ -1,4 +1,4 @@
-import {applyAppearance, setCustomFont} from './appearance';
+import {applyAppearance} from './appearance';
 import {element} from './dom';
 import {TranscriptView} from './TranscriptView';
 import {AgentMenu} from './AgentMenu';
@@ -177,7 +177,6 @@ export class RadCodeView {
     :'Nothing to compact yet';
    element('error').hidden=false;element('error').classList.add('info');
   }
-  else if(message.type==='fontCustom'){setCustomFont(String(message.value??''));applyAppearance(this.state.appearance);}
   else if(message.type==='sent'){const input=element<HTMLTextAreaElement>('message');if(input.value===message.text)this.clear();}
   else if(message.type==='draft'){const input=element<HTMLTextAreaElement>('message');input.value+=(input.value?'\n\n':'')+message.text;this.api.setState({draft:input.value});this.tab('chat');input.focus();}
   else if(message.type==='showChat')this.tab('chat');
