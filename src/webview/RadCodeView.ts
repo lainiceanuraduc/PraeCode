@@ -5,6 +5,9 @@ import {AgentMenu} from './AgentMenu';
 import {ContextAttachments} from './ContextAttachments';
 import {PastedImages} from './PastedImages';
 import {ApprovalCards} from './ApprovalCards';
+import {ModelPicker} from './ModelPicker';
+import {FeaturesPanel} from './FeaturesPanel';
+import {ComposerResize} from './ComposerResize';
 import {IMAGE_MIME} from '../domain/Images';
 import type {ContextUsage, PermissionRequest, PastedImage, AttachmentRef, ViewState} from './types';
 import type {ConversationSession} from '../application/SessionController';
@@ -21,6 +24,12 @@ export class RadCodeView {
   return !!active?.acceptsImages;
  });
  private approvals=new ApprovalCards((m:any)=>this.post(m));
+ private picker=new ModelPicker((m:any)=>this.post(m));
+ private features=new FeaturesPanel((m:any)=>this.post(m));
+ private composerSize=new ComposerResize({
+  read:()=>Number(this.api.getState()?.composerHeight)||undefined,
+  write:(height:number)=>this.api.setState({...this.api.getState(),composerHeight:height})
+ });
  private pendingImages:PastedImage[]=[];
  constructor(){
   const saved=this.api.getState()??{};element<HTMLTextAreaElement>('message').value=saved.draft??'';
@@ -31,7 +40,9 @@ export class RadCodeView {
   for(const id of ['connect','new'])element(id).onclick=()=>this.post({type:'new'});
   element('settings').onclick=()=>this.post({type:'settings'});
   element('logs').onclick=()=>this.post({type:'logs'});
-  element('model').onclick=()=>this.post({type:'model',id:this.state.activeId});
+  // The model button opens the picker modal in place: the model list is already in the state push,
+  // and only favorites need a host round-trip.
+  element('model').onclick=()=>this.openModelPicker();
   element('history').onclick=()=>this.post({type:'history'});
   element('rename').onclick=()=>this.beginRename();
   element('rename-input').onkeydown=e=>{
@@ -112,8 +123,16 @@ export class RadCodeView {
   active.title=title;this.render();
   this.post({type:'rename',id:active.id,title});
  }
+ /** Open the picker for the active model; the host is asked only for the stored favorites. */
+ private openModelPicker():void{
+  const active=this.state.sessions.find(s=>s.id===this.state.activeId);
+  if(!active)return;
+  this.picker.open(active.models??[],active.info?`${active.info.provider}:${active.info.model}`:'',active.id);
+ }
  private tab(name:string):void{
   for(const section of ['chat','agents','features']){element(section).hidden=section!==name;const b=element('tab-'+section);b.setAttribute('aria-selected',String(section===name));b.tabIndex=section===name?0:-1;}
+  // The profile is read when the tab is opened, not on every state push: it is disk content, not state.
+  if(name==='features')this.post({type:'profile'});
  }
  private send():void{
   const input=element<HTMLTextAreaElement>('message');const active=this.state.sessions.find(s=>s.id===this.state.activeId);
@@ -162,6 +181,11 @@ export class RadCodeView {
   else if(message.type==='sent'){const input=element<HTMLTextAreaElement>('message');if(input.value===message.text)this.clear();}
   else if(message.type==='draft'){const input=element<HTMLTextAreaElement>('message');input.value+=(input.value?'\n\n':'')+message.text;this.api.setState({draft:input.value});this.tab('chat');input.focus();}
   else if(message.type==='showChat')this.tab('chat');
+  else if(message.type==='openModelPicker')this.openModelPicker();
+  else if(message.type==='favorites')this.picker.setFavorites(message.ids);
+  else if(message.type==='modelDetails')this.picker.setDetails(message.details);
+  else if(message.type==='profile'){this.features.setFiles(message.files);element('profile-home').textContent=message.home??'HERMES_HOME';}
+  else if(message.type==='profileSaved')this.features.saved(message.id,message.savedAt);
   else if(message.type==='presetSaved')this.agents.saved();
   else if(message.type==='catalog')this.agents.capabilities(message.values,message.note,message.provider,message.model);
  }

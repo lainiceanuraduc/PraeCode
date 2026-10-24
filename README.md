@@ -1,10 +1,10 @@
 # RadCode — Hermes Agent for VS Code
 
-[![Version](https://img.shields.io/badge/version-0.1.21-e5b93c)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.22-e5b93c)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-e5b93c)](LICENSE)
 [![GitHub](https://img.shields.io/badge/source-GitHub-e5b93c)](https://github.com/lainiceanuraduc/RadCode)
 
-A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.21.
+A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.22.
 It talks to your existing Hermes installation over **ACP** (Agent Client Protocol) — no API keys are
 stored in VS Code, and no Hermes configuration is modified.
 
@@ -20,11 +20,12 @@ implementation.
 What that does and does not imply:
 
 - **Verified where it claims to be.** Every behavioural claim in this README was exercised against a
-  real Hermes install, not assumed: 22 unit tests, 41 Python tests for the bridge, a Playwright UI
-  smoke suite, and a live ACP handshake. Numbers such as the per-model effort ladders were read back
+  real Hermes install, not assumed: 28 unit tests, 44 Python tests for the bridge, a Playwright UI
+  smoke suite (including the model picker, the resize handle and a profile save), and a live ACP
+  handshake. Numbers such as the per-model effort ladders were read back
   from the provider, and several bugs were found exactly because a claim looked plausible but was not.
 - **Not audited line by line.** No independent security review has been done. The code has not been
-  read end-to-end by a developers or reviewers, and AI-written code has failure modes that tests miss: subtly wrong
+  read end-to-end by developers or reviewers, and AI-written code has failure modes that tests miss: subtly wrong
   edge-case handling, plausible-looking abstractions, and comments that describe intent rather than
   behaviour.
 - **Treat it accordingly.** Read the source before granting broad autonomy. This extension can run
@@ -56,17 +57,41 @@ Extension Development Host.
 > missing.
 
 
+## What's new in 0.1.22
+
+- **Model picker modal.** The model button opens a dialog with two lists: **Favorites** (kept by the
+  extension in VS Code global state) and **All models** for the selected provider. Star a model to
+  add it, star it again in Favorites to remove it. The right-hand pane shows the selected model as the
+  provider describes it — provider name, publishing lab (`owned_by`), context window *with its
+  source*, and the exact thinking/effort ladder — fetched through the bridge, not read from a table.
+  A model whose provider publishes nothing says "Unknown" instead of quoting a default.
+- **Resizable prompt.** A grab bar above the textarea: drag it, or focus it and use
+  <kbd>↑</kbd>/<kbd>↓</kbd>/<kbd>Home</kbd>. The height is clamped to 60% of the window and remembered.
+- **Features is now your profile, not a brochure.** `SOUL.md`, `memories/USER.md` and
+  `memories/MEMORY.md` are shown and editable, each with an explicit **Save** (atomic
+  temp-file + rename, allowlisted to the profile directory). `config.yaml` is deliberately not
+  editable: broken YAML breaks Hermes, broken memory only changes what it remembers.
+- **`session/set_model` timeouts are no longer retried blindly.** The session is re-read; if the
+  switch landed it is adopted, otherwise the session is marked *disconnected* with a warning, so a
+  retry cannot move you to a model you never picked.
+- **Approvals can no longer be denied silently.** Approval cards now live above the tab panels (so a
+  request raised while Subagents/Features is open is visible), posts are queued until the webview is
+  ready, and every unanswered path — untrusted workspace, no option offered, 120 s expiry — is
+  reported in the view and in the connection log. Previously a request could expire while nobody saw
+  it and the tool simply failed.
+
 ## What works in v0.1
 
 | Area | Behaviour |
 |---|---|
 | Chat | Streaming replies, resumable sessions, cancellation, Markdown (sanitized), tool-call activity, permission prompts. The composer clears on submit and gets the draft back if the host rejects it. Rename a conversation inline (✎ beside the picker, or `Hermes: Rename Session`): the title is stored on the Hermes session itself (`session.mutate rename`) and therefore survives a resume |
 | Thinking / effort | Model-aware selector from **None / Off** to **max**, populated from Hermes' own provider policy and read back after applying. Every Ollama Cloud model (e.g. `deepseek-v4.1-flash:1017`) gets `none/low/medium/high/max`, Mistral-hosted ones `none/low/medium/high`; the Mistral API has `none/high` |
-| Model | Pick a session model; provider + model overrides; guarded Hermes model switches surface as approval prompts |
+| Model | A picker modal with per-provider **All models** and a persistent **Favorites** list (star to add, star again to remove), plus live per-model details: provider, lab, context window and effort ladder. Guarded Hermes model switches surface as approval prompts. "Other…" still accepts a manual provider/model id |
+| Prompt | The composer is resizable from a grab bar above it (drag, or arrow keys) and keeps its height between reloads |
 | Subagents | Named worker presets (provider, model, effort, instructions), isolated sessions per run, parallel-run cap, "Use result" into the main chat |
 | Context | Files attached to a message: the editor you are looking at is offered as a one-click chip, `＋ Context` picks more from the workspace, each chip opens or removes the file. The editor host reads the bytes at send time, so you always send the current file; the transcript shows names, not file bodies. Workspace-trust enforcement |
 | Appearance | `radcode.accent` picks the highlight colour (yellow default, 8 palettes), `radcode.fontFamily`/`fontSize`/`lineHeight`/`compact` restyle the view. Changes apply live |
-| Discovery | "Features" tab summarizing Hermes capabilities, with links to the official docs |
+| Profile | "Features" tab reads the profile on disk: `SOUL.md`, `memories/USER.md`, `memories/MEMORY.md`, each editable with an explicit Save |
 | Diagnostics | "RadCode Hermes" output channel with secret redaction |
 
 ## Requirements
@@ -85,7 +110,7 @@ Extension Development Host.
 | `radcode.maxParallelAgents` | `2` | How many RadCode worker sessions may run at once. |
 | `radcode.accent` | `yellow` | Highlight colour: yellow, amber, orange, lime, teal, violet, magenta, blue. Drives focus rings, links, active tab, composer and attachment chips. Light editor themes automatically get a darkened text variant. |
 | `radcode.fontFamily` | `editor` | `editor` (inherit), `system`, `monospace`, `serif`, or `custom` with `radcode.fontFamilyCustom`. |
-| `radcode.fontSize` | `13` | Base size in px (10–20). |
+| `radcode.fontSize` | `16` | Base size in px (10–20). Tabs, wordmark, logo and the text-size control sit 20% above it; metadata keeps a 13px floor. |
 | `radcode.lineHeight` | `0` | Line-height multiplier; `0` follows the editor. |
 | `radcode.compact` | `false` | Tighter spacing for narrow sidebars. |
 
@@ -177,16 +202,20 @@ they are editor-side orchestration using independent ACP sessions.
 
 ```
 src/
-  domain/          Presets, effort ladder, attachment/image/limit rules   (no VS Code, no Node)
+  domain/          Presets, effort ladder, model-catalog grouping and favorites, profile
+                   allowlist, attachment/image/limit rules               (no VS Code, no Node)
   application/     SessionController, ConversationSession                 (no VS Code imports)
   infrastructure/  JsonRpcTransport, AcpClient, HermesControl             (Node only)
   presentation/    ChatViewProvider (the webview adapter)
   extension.ts     activate/deactivate only
   extension/       RadCodeExtension (composition root), PermissionBroker, Inputs
-                   (attachments + images), Settings, screenshot, media helpers
+                   (attachments + images), Settings, ProfileStore (allowlisted profile
+                   read/write), screenshot, media helpers
   webview/         one module per concern: TranscriptView, AgentMenu, ContextAttachments,
-                   PastedImages, ApprovalCards, appearance, types, main.ts (bootstrap)
-bridge/control.py  version-gated Hermes-side helper (catalog, fenced effort, rename, compact)
+                   PastedImages, ApprovalCards, ModelPicker, FeaturesPanel, ComposerResize,
+                   appearance, types, main.ts (bootstrap)
+bridge/control.py  version-gated Hermes-side helper (catalog, model details, fenced effort,
+                   rename, compact)
 media/             webview HTML/CSS/icon (CSP-locked, no inline script)
 ```
 
@@ -203,7 +232,7 @@ npm test              # unit tests (transport, ACP, presets, sessions, control)
 npm run test:python   # Hermes-side helper tests (needs Hermes' Python)
 npm run test:ui       # Playwright: rendering, CSP, sanitization, capability select, a11y labels
 npm run test:live     # real ACP handshake + session + effort read-back
-npm run package       # produces radcode-hermes-0.1.21.vsix
+npm run package       # produces radcode-hermes-0.1.22.vsix
 ```
 
 The extension-host test (`test/extension-host.ts`) is run in a real editor:
@@ -214,9 +243,11 @@ codium --extensionDevelopmentPath="$PWD" --extensionTestsPath="$PWD/out/extensio
 
 ## Known limitations / not in v0.1
 
-- No admin surfaces (MCP editor, cron, kanban, profiles, skills manager, memory editor).
+- No admin surfaces (MCP editor, cron, kanban, profiles, skills manager). Memory and `SOUL.md` are
+  editable from the Features tab; `config.yaml` is deliberately not exposed there — edit it with
+  Hermes' own configuration commands.
 - Worker presets are extension-local; they do not write `delegation.*` into Hermes config.
-- No voice, image, vision-paste, or session-search UI yet.
+- No voice, image-generation, or session-search UI yet (pasted images do work).
 - Effort controls depend on a local Hermes runtime; remote-only setups fall back to a disabled
   selector with an explanatory note rather than a fake control.
 - Only sessions created by this extension in the current workspace are listed for resume.

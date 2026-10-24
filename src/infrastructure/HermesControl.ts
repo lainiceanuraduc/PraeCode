@@ -5,6 +5,12 @@ import path from 'node:path';
 export interface EffortCapabilities { values: string[]; note: string; }
 export interface ContextUsage { used: number | null; limit: number | null; messages: number; compactions: number; }
 // `undefined` means Hermes did not report it; the UI shows "unknown" rather than a fake number.
+/** Provider/model facts the picker's detail pane shows; `context` is null when no source published it. */
+export interface ModelDetails {
+ provider:string; providerLabel:string; model:string; baseUrl:string;
+ lab:string; context:number|null; contextSource:''|'provider'|'catalog'; catalogName:string;
+ capabilities:EffortCapabilities;
+}
 export interface SessionInfo { model: string; provider: string; baseUrl: string; effort: string; wireEffort: string; approvalPolicy: string; capabilities: EffortCapabilities; context?: ContextUsage; messages?: number; }
 export interface SessionControl {
  inspect(sessionId: string): Promise<SessionInfo>;
@@ -16,6 +22,8 @@ export interface SessionControl {
  compact(sessionId: string, focus?: string): Promise<{sessionId:string;compressed:boolean;messages?:number;summary?:string}>;
  /** Fetch the effort ladder for a model without mutating anything (for the selector). */
  capabilities(provider: string, model: string, baseUrl?: string): Promise<EffortCapabilities>;
+ /** Facts about a model the session is not running on yet: lab, context window, effort ladder. */
+ modelInfo(provider: string, model: string, baseUrl?: string): Promise<ModelDetails>;
 }
 
 /** Uses Hermes' own Python/runtime, with a small explicit protocol on stdin. */
@@ -27,6 +35,7 @@ export class HermesControl implements SessionControl {
  rename(sessionId: string, title: string): Promise<{sessionId:string;title:string}> { return this.invoke({action:'rename',sessionId,title}); }
  compact(sessionId: string, focus = ''): Promise<{sessionId:string;compressed:boolean;messages?:number;summary?:string}> { return this.invoke({action:'compact',sessionId,focus}); }
  capabilities(provider: string, model: string, baseUrl = ''): Promise<EffortCapabilities> { return this.invoke({action:'catalog',provider,model,baseUrl}); }
+ modelInfo(provider: string, model: string, baseUrl = ''): Promise<ModelDetails> { return this.invoke({action:'modelinfo',provider,model,baseUrl}); }
  private async command(): Promise<string[]> {
   if(this.python) return [this.python,this.script];
   const {stdout}=await promisify(execFile)(this.hermes,['--print-runtime-command','--module',path.basename(this.script,'.py')],{timeout:30_000,windowsHide:true})

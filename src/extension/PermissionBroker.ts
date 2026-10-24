@@ -24,15 +24,31 @@ interface PendingPermission {resolve:(r:{optionId?:string;outcome:string})=>void
 export class PermissionBroker {
  /** Open requests by id; each resolver is settled exactly once (answer, cancel, deadline, dispose). */
  private pending=new Map<string,{resolve:(r:{optionId?:string;outcome:string})=>void;params:any;timer?:NodeJS.Timeout}>();
- constructor(private view:ChatViewProvider,private sessions:()=>{id:string;title:string}[]){}
+ constructor(private view:ChatViewProvider,private sessions:()=>{id:string;title:string}[],
+             private onExpired:(text:string)=>void=()=>{}){}
+ /**
+  * A request that cannot be shown is still a decision the user deserves to see. Every path that ends
+  * in "cancelled" without an answer says so, in the view and in the connection log: a silent denial
+  * used to look like the edit simply failed.
+  */
+ private denyVisibly(text:string):void{
+  this.onExpired(text);
+  this.view.post({type:'error',message:text});
+ }
  /** Ask the chat view and wait for the user; never resolves to "allowed" on its own. */
  async request(params:any):Promise<any>{
-  if(!vscode.workspace.isTrusted)return {outcome:{outcome:'cancelled'}};
+  if(!vscode.workspace.isTrusted){
+   this.denyVisibly('Hermes asked to run a tool, but this workspace is not trusted, so the request was denied.');
+   return {outcome:{outcome:'cancelled'}};
+  }
   // Keep every option Hermes sent: allow_session arrives as kind "allow_always" and is the
   // "accept all" the user expects, so filtering on two kinds silently removed it.
   const raw=Array.isArray(params?.options)?params.options:[];
   const options=raw.filter((o:any)=>typeof o?.optionId==='string');
-  if(!options.length)return {outcome:{outcome:'cancelled'}};
+  if(!options.length){
+   this.denyVisibly('Hermes asked for approval but offered no option, so the request was denied.');
+   return {outcome:{outcome:'cancelled'}};
+  }
   const session=this.sessions().find(s=>s.id===params.sessionId);
   const title=String(params.toolCall?.title??'Tool permission').slice(0,300);
   const requestId=randomUUID();
@@ -46,8 +62,13 @@ export class PermissionBroker {
      return {optionId:String(o.optionId),kind,label,
       role:kind.startsWith('allow')?(kind==='allow_once'?'allow':'allow-all'):'deny'};
     })});
-   // The webview is not always mounted (view closed / reloaded): never leave a turn hanging.
-   const deadline=setTimeout(()=>this.settle(requestId,{outcome:'cancelled'}),120_000);
+   // The webview is not always mounted (view closed / reloaded): never leave a turn hanging, and
+   // never let the deadline pass as a silent denial — say what expired and that nothing was allowed.
+   const deadline=setTimeout(()=>{
+    if(!this.pending.has(requestId))return;
+    this.denyVisibly(`Approval request timed out after 120s and was denied: ${title}`);
+    this.settle(requestId,{outcome:'cancelled'});
+   },120_000);
    this.pending.get(requestId)!.timer=deadline;
   });
   if(response.outcome==='selected'&&response.optionId)return {outcome:{outcome:'selected',optionId:response.optionId}};

@@ -20,6 +20,16 @@ export interface ContextUsage {used:number|null;limit:number|null;messages:numbe
 /** Everything `radcode.accent` / font settings resolve to. */
 export interface Appearance {accent:string;fontFamily:string;fontSize:number;lineHeight:number;compact:boolean;}
 
+/** Model facts the picker shows for the row currently selected there (read from Hermes by the host). */
+export interface ModelDetailsView {
+ provider:string;providerLabel:string;model:string;baseUrl:string;lab:string;
+ context:number|null;contextSource:''|'provider'|'catalog';catalogName:string;
+ capabilities:{values:string[];note:string};
+}
+
+/** One editable Hermes profile document in the Features tab. */
+export interface ProfileFileView {id:string;title:string;description:string;path:string;content:string;exists:boolean;}
+
 /** The state the host pushes on every change; the webview is a pure projection of it. */
 export interface ViewState {
  sessions:ConversationSession[];activeId:string;presets:AgentPreset[];recent:any[];

@@ -49,6 +49,33 @@ class CapabilitiesTest(unittest.TestCase):
         self.assertNotIn('NEVER-RETURN', str(result))
         self.assertEqual(result['effort'], 'high')
 
+class ModelInfoTest(unittest.TestCase):
+    def test_summarize_model_prefers_the_providers_own_metadata(self):
+        result = control.summarize_model(
+            'mistral', 'mistral-large-4', 'https://api.mistral.ai/v1',
+            {'owned_by': 'Mistral AI', 'context_length': 131072},
+            {'context_length': 262144, 'name': 'Mistral Large'},
+            {'values': ['none', 'high'], 'note': 'ladder'}, 'Mistral')
+        self.assertEqual(result['lab'], 'Mistral AI')
+        self.assertEqual(result['context'], 131072)
+        self.assertEqual(result['contextSource'], 'provider')
+        self.assertEqual(result['providerLabel'], 'Mistral')
+        self.assertEqual(result['capabilities']['values'], ['none', 'high'])
+        self.assertNotIn('api_key', str(result))
+
+    def test_summarize_model_never_invents_a_context_window(self):
+        result = control.summarize_model('p', 'm')
+        self.assertIsNone(result['context'])
+        self.assertEqual(result['contextSource'], '')
+        self.assertEqual(result['lab'], '')
+
+    def test_summarize_model_labels_a_catalog_figure_as_such(self):
+        result = control.summarize_model('openrouter', 'anthropic/claude', '', None,
+                                         {'context_length': 200000, 'name': 'Claude'})
+        self.assertEqual(result['context'], 200000)
+        self.assertEqual(result['contextSource'], 'catalog')
+
+
 if __name__ == '__main__': unittest.main()
 
 

@@ -19,6 +19,8 @@ import {ChatViewProvider} from '../presentation/ChatViewProvider';
 import {webviewMessageError} from '../domain/MessageLimits';
 
 import {mcpServers,appearance,sanitizedCustomFont,clampTextSize} from './Settings';
+import {readProfile,saveProfile} from './ProfileStore';
+import {toggleFavorite} from '../domain/ModelCatalog';
 import {editorContext,readAttachments,readImages} from './Inputs';
 import {PermissionBroker} from './PermissionBroker';
 import {captureScreenshot} from './screenshot';
@@ -42,7 +44,8 @@ export class RadCodeExtension implements vscode.Disposable {
   this.output=vscode.window.createOutputChannel('RadCode Hermes');
   this.presets=new PresetRepository(context.globalState);
   this.view=new ChatViewProvider(context.extensionUri);
-  this.permissions=new PermissionBroker(this.view,()=>this.service?.sessions??[]);
+  this.permissions=new PermissionBroker(this.view,()=>this.service?.sessions??[],
+   text=>this.output.appendLine(redact(text)));
   this.view.onMessage=m=>this.handle(m);
 
   this.disposables.push(
@@ -67,7 +70,7 @@ export class RadCodeExtension implements vscode.Disposable {
    'radcode.screenshot':()=>captureScreenshot(this.view,()=>this.trusted()),
    'radcode.mcp':()=>this.openMcpSettings(),
    'radcode.attachSelection':()=>this.attachSelection(),
-   'radcode.model':()=>this.pickModel(),
+   'radcode.model':()=>this.openModelPicker(),
    'radcode.settings':()=>vscode.commands.executeCommand('workbench.action.openSettings','@ext:radcode-local.radcode-hermes'),
    'radcode.logs':()=>this.output.show(true)
   };
@@ -238,6 +241,61 @@ export class RadCodeExtension implements vscode.Disposable {
   this.publish();
  }
 
+ /**
+  * Open the picker modal. The models are already in the state the webview holds, so this only has to
+  * make sure the view is mounted (a command-palette call can arrive before it ever was).
+  */
+ private async openModelPicker(id?:string):Promise<void>{
+  const session=id?this.controller.get(id):this.controller.active;
+  if(!session)throw new Error('Create a conversation first');
+  await this.view.open();
+  const deadline=Date.now()+10_000;
+  while(!this.view.isReady&&Date.now()<deadline)await new Promise(r=>setTimeout(r,50));
+  this.publish();
+  this.view.post({type:'openModelPicker'});
+ }
+
+ /** Stored favorites, bounded: the list is a convenience, not a catalog. */
+ private favorites():string[]{
+  return this.context.globalState.get<string[]>('radcode.favoriteModels',[])
+   .filter(id=>typeof id==='string'&&id.length<=400).slice(0,200);
+ }
+ private postFavorites():void{this.view.post({type:'favorites',ids:this.favorites()});}
+ private async setFavorite(m:Record<string,any>):Promise<void>{
+  const id=typeof m.id==='string'?m.id.trim():'';
+  if(!id||id.length>400)throw new Error('Invalid model identifier');
+  const current=this.favorites();
+  const next=m.on===true?toggleFavorite(current.filter(x=>x!==id),id):current.filter(x=>x!==id);
+  await this.context.globalState.update('radcode.favoriteModels',next);
+  this.view.post({type:'favorites',ids:next});
+ }
+
+ /** Details for a row the user selected in the modal: lab, context window, effort ladder. */
+ private async readModelInfo(m:Record<string,any>):Promise<void>{
+  const provider=typeof m.provider==='string'?m.provider.slice(0,200):'';
+  const model=typeof m.model==='string'?m.model.slice(0,300):'';
+  // A base URL is never taken from the webview: the bridge resolves the provider's own endpoint.
+  if(!model)throw new Error('Choose a model first');
+  const details=await this.controller.control.modelInfo(provider,model);
+  this.view.post({type:'modelDetails',details});
+ }
+
+ /** The profile directory, resolved the same way the runtime resolves it. */
+ private profileHome():string{
+  if(this.profile)return this.profile;
+  const configured=vscode.workspace.getConfiguration('radcode').get<string>('hermesHome','')||process.env.HERMES_HOME||'';
+  return configured||path.join(homedir(),'.hermes');
+ }
+ private async readProfileFiles():Promise<void>{
+  const home=this.profileHome();
+  this.view.post({type:'profile',home,files:await readProfile(home)});
+ }
+ private async writeProfileFile(m:Record<string,any>):Promise<void>{
+  if(typeof m.id!=='string')throw new Error('Unknown profile file');
+  const result=await saveProfile(this.profileHome(),m.id,m.text);
+  this.view.post({type:'profileSaved',id:result.id,savedAt:result.savedAt});
+ }
+
  private async pickModel(id?:string):Promise<void>{
   const controller=this.controller;
   const session=id?controller.get(id):controller.active;
@@ -344,7 +402,18 @@ export class RadCodeExtension implements vscode.Disposable {
    history:()=>this.history(),
    attach:()=>this.attachSelection(),
    new:()=>this.newSession(),
-   model:m=>this.pickModel(idOf(m)),
+   model:m=>this.openModelPicker(idOf(m)),
+   manualModel:m=>this.pickModel(idOf(m)),
+   // Favorites are extension state (globalState), so they survive a window reload and every profile.
+   favoritesRequest:()=>this.postFavorites(),
+   favorite:m=>this.setFavorite(m),
+   modelInfo:m=>this.readModelInfo(m),
+   useModel:(m,id)=>{
+    if(typeof m.value!=='string')throw new Error('Choose a model first');
+    return this.controller.setModel(id(),m.value);
+   },
+   profile:()=>this.readProfileFiles(),
+   saveProfile:m=>this.writeProfileFile(m),
    select:(m,id)=>{this.controller.select(id());this.view.post({type:'showChat'});},
    rename:(m,id)=>{
     if(typeof m.title!=='string')throw new Error('Enter a session name');

@@ -219,18 +219,38 @@ export class SessionController extends EventEmitter {
   const target=provider&&!clean.includes(':')?`${provider}:${clean}`:clean;
   s.status='configuring';this.changed();
   try{
-   await this.client.setModel(id,target);
+   try{
+    await this.client.setModel(id,target);
+   }catch(e){
+    // A `session/set_model` that timed out may still have landed. Re-read the session instead of
+    // re-sending: Hermes cannot say whether the first switch committed, and a blind retry is how a
+    // user ends up on a model they never picked. Confirmed → adopt; otherwise refuse and require a
+    // reconnect, so the session cannot be used on an assumption.
+    if(/timed out|outcome may be unknown/i.test(String(e instanceof Error?e.message:e))){
+     let confirmed=false;
+     try{await this.refresh(s);confirmed=this.modelMatches(s,clean,target,provider);}catch{}
+     if(confirmed){await this.refreshLadder(s.id);return;}
+     s.status='disconnected';
+     s.warning='The model switch timed out and Hermes did not confirm it. Reconnect (resume this conversation) before trying again.';
+     throw new Error(s.warning);
+    }
+    throw e;
+   }
    await this.refresh(s);
    if(!s.info)throw new Error('Could not confirm model selection');
-   const modelOk=s.info.model===clean||s.info.model===target||target.endsWith(`:${s.info.model}`);
-   const providerOk=!provider||s.info.provider===provider;
-   if(!modelOk||!providerOk)
+   if(!this.modelMatches(s,clean,target,provider))
     throw new Error(`Model selection not confirmed. Active: ${s.info.provider}/${s.info.model}`);
    // The new model may have a different ladder; refresh before the selector renders it.
    await this.refreshLadder(s.id);
    // `refresh` above already re-inspected the switched session, so s.info.capabilities now describe
    // the NEW model; the selector renders from it on the next publish. No extra request needed.
-  }finally{s.status='idle';this.changed();}
+  }finally{if(s.status==='configuring')s.status='idle';this.changed();}
+ }
+ /** Whether the session really sits on the requested provider/model after a switch. */
+ private modelMatches(s:ConversationSession,clean:string,target:string,provider:string):boolean{
+  if(!s.info)return false;
+  const modelOk=s.info.model===clean||s.info.model===target||target.endsWith(`:${s.info.model}`);
+  return modelOk&&(!provider||s.info.provider===provider);
  }
  /** Adopt the ACP mode list a session reply carries (create/load). Absent = leave the control hidden. */
  private readModes(s:ConversationSession,result:any):void{

@@ -27,6 +27,7 @@ const control:SessionControl={
  catalog:async()=>({values:['none','low','high'],note:'test fixture'}),
  compact:async(id:string)=>({sessionId:id,compressed:true,messages:0}),
  capabilities:async(p:string,m:string)=>({values:['none','low','high'],note:'test fixture'}),
+ modelInfo:async()=>({provider:'p',providerLabel:'P',model:'m',baseUrl:'',lab:'',context:null,contextSource:'',catalogName:'',capabilities:{values:[],note:''}}),
  rename:async(id:string,title:string)=>({sessionId:id,title})
 };
 
@@ -70,6 +71,28 @@ test('rename goes through the session mutation, normalizes the name, and never a
  await assert.rejects(()=>controller.rename(s.id,'Nope'),/did not store/);
  assert.equal(s.title,'My fix for the ladder','the previous name survives a refusal');
  assert.equal(s.status,'idle','the session is usable again after a failed rename');
+ controller.dispose();
+});
+
+test('an unconfirmed model switch is inspected, never retried, and blocks the session',async()=>{
+ const client=new AgentFixture();
+ let calls=0,model='test-model';
+ client.setModel=async()=>{calls++;throw new Error('session/set_model timed out; its outcome MAY BE UNKNOWN. Reconnect before retrying.');};
+ const recording:SessionControl={...control,inspect:async()=>({...await control.inspect(''),model})};
+ const controller=new SessionController(client,recording,()=>process.cwd(),()=>1);
+ const s=await controller.create();
+ // The switch landed on Hermes' side even though the reply was lost: adopt it, do not re-send.
+ model='new-model';
+ await controller.setModel(s.id,'new-model','test');
+ assert.equal(s.info?.model,'new-model');
+ assert.equal(calls,1,'the timed-out switch is not sent twice');
+ assert.equal(s.status,'idle','a confirmed switch leaves the session usable');
+ // Nothing landed this time: the session is marked disconnected so a blind retry is impossible.
+ await assert.rejects(()=>controller.setModel(s.id,'other','test'),/did not confirm/i);
+ assert.equal(s.status,'disconnected');
+ assert.equal(calls,2);
+ await assert.rejects(()=>controller.setModel(s.id,'other','test'),/disconnected/i);
+ assert.equal(calls,2,'a disconnected session never reaches the wire again');
  controller.dispose();
 });
 

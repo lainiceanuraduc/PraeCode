@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.1.22
+
+- Model button opens a picker modal: a Favorites list persisted by the extension and, per provider,
+  every model Hermes offers. Starring a model adds it, starring it again in Favorites removes it.
+- The modal shows the selected model's real details: provider, publishing lab, context window (with
+  its source) and the exact thinking/effort ladder resolved for that provider and model.
+- The prompt input has a grab bar above it: drag or arrow-key to resize, remembered per webview.
+- Features now shows the Hermes profile itself — `SOUL.md`, `memories/USER.md` and
+  `memories/MEMORY.md` — each editable with an explicit Save, written atomically and allowlisted to
+  the profile directory.
+- A `session/set_model` call that times out is no longer retried blindly: the session is re-read,
+  the switch is adopted when it landed, and the session is marked disconnected when Hermes cannot
+  confirm it, so a blind retry can never move you to a model you did not pick.
+- Approvals are visible from every tab, queued until the webview is ready, and a request that is
+  denied without an answer (untrusted workspace, no options, 120s expiry) now says so in the view and
+  the connection log instead of failing silently.
+
 ## 0.1.21
 
 - Replace the README screenshot with the supplied real conversation image, independent of generated UI smoke-test screenshots.

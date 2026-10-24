@@ -18,17 +18,19 @@
 <button role="tab" aria-selected="false" aria-controls="features" id="tab-features" data-tab="features" tabindex="-1">Features</button>
 </nav>
 <div id="error" role="alert" hidden><span id="error-text"></span><button id="dismiss-error" aria-label="Dismiss error">×</button></div>
+<!-- Approvals live above the tab panels: a request raised while Subagents or Features is open must
+     still be visible, and it must never look like a silent denial. -->
+<div id="permissions" class="permissions" aria-live="polite"></div>
 <section id="chat" role="tabpanel" aria-labelledby="tab-chat">
 <div class="session-bar"><label class="sr-only" for="sessions">Conversation</label><select id="sessions"><option value="">No conversation</option></select><input id="rename-input" class="rename-input" hidden maxlength="120" aria-label="Conversation name" placeholder="Name this conversation"><button id="new" class="quiet" title="New conversation" aria-label="New conversation">＋</button><button id="rename" class="quiet" title="Rename this conversation" aria-label="Rename this conversation">✎</button><button id="history" class="quiet" title="Resume a conversation" aria-label="Resume a conversation">↶</button></div>
 <div id="route" class="route" hidden><button id="model" class="model" title="Change provider and model">Select model</button><label for="effort">Thinking effort</label><select id="effort" aria-label="Thinking effort"><option value="default">Default</option></select><span id="effort-note" class="caption"></span><label class="thinking-label"><input id="show-thinking" type="checkbox">Show reasoning</label></div>
 <div id="warning" class="warning" hidden></div>
 
-<div id="permissions" class="permissions" aria-live="polite"></div>
-<div id="welcome" class="welcome"><span class="eyebrow">RADCODE · VERSION 0.1.21</span><h1>Make room for<br>your next idea.</h1><p>Chat with Hermes in your project. Inspect its tool activity and give focused work to configurable agents.</p><button id="connect">Connect to Hermes</button><p class="caption">Uses your existing Hermes login and profile.<br>Tools can modify files and run commands.</p></div>
+<div id="welcome" class="welcome"><span class="eyebrow">RADCODE · VERSION 0.1.22</span><h1>Make room for<br>your next idea.</h1><p>Chat with Hermes in your project. Inspect its tool activity and give focused work to configurable agents.</p><button id="connect">Connect to Hermes</button><p class="caption">Uses your existing Hermes login and profile.<br>Tools can modify files and run commands.</p></div>
 <h2 id="session-title" class="session-title" hidden></h2>
 <div id="transcript" role="log" aria-label="Conversation transcript" aria-live="off" tabindex="0"></div>
 <div class="status-line"><span class="status-spinner" data-state="idle" aria-hidden="true"><i class="dot"></i><i class="dot"></i><i class="dot"></i></span><span id="status" role="status" aria-live="polite">Not connected</span><label class="sr-only" for="mode">Approval mode</label><select id="mode" class="mode-select" title="When Hermes must ask before editing files" hidden><option value="">Approvals</option></select><div class="context-meter" id="context-meter" hidden><div class="meter" role="progressbar" id="context-bar" aria-label="Context used" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="context-fill"></span></div><span id="context-text" class="caption">—</span><button type="button" id="compact" class="quiet" title="Summarise older turns to free context (Hermes /compress)">Compact</button></div></div>
-<form id="composer"><label class="sr-only" for="message">Message Hermes</label><textarea id="message" rows="2" placeholder="Ask, build, or explore…" aria-label="Message Hermes" maxlength="200000"></textarea>
+<form id="composer"><div id="composer-resize" class="composer-resize" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Resize the prompt input" title="Drag to resize the prompt input (arrow keys also work)" aria-valuemin="36"></div><label class="sr-only" for="message">Message Hermes</label><textarea id="message" rows="2" placeholder="Ask, build, or explore…" aria-label="Message Hermes" maxlength="200000"></textarea>
 <div class="context-row" id="context-row">
 <div class="context-pick"><span id="editor-chip" class="editor-chip" hidden></span></div>
 <ul id="context-list" class="context-list" aria-label="Attached files" aria-live="polite"></ul>
@@ -61,14 +63,38 @@
 <h2>Worker runs</h2><div id="worker-runs"><p class="caption">No workers started yet.</p></div>
 </section>
 <section id="features" role="tabpanel" aria-labelledby="tab-features" hidden>
-<div class="section-title"><div><h1>Explore Hermes</h1><p class="caption">The engine is more than a chat box.</p></div><span class="badge">v0.1.21</span></div>
-<p>RadCode exposes chat, tools, session controls, and configurable workers. Other features remain managed by Hermes.</p>
-<div class="feature-card"><h2>Workspace agent <span class="badge">In RadCode</span></h2><p>Streaming chat, resumable sessions, selected-code context, tool output, permission prompts, cancellation, model switching, and model-aware effort.</p></div>
-<div class="feature-card"><h2>Memory & skills</h2><p>Persistent memory, session search, project context, reusable skills, and skill curation. Applied by your existing Hermes profile.</p><button class="text-link" data-doc="user-guide/features/skills">Skills documentation ↗</button></div>
-<div class="feature-card"><h2>Tools & integrations</h2><p>Terminal, files, browser, web search, code execution, MCP, plugins, and tool discovery. Available tools depend on your profile.</p><button class="text-link" data-doc="user-guide/features/tools">Tools documentation ↗</button></div>
-<div class="feature-card"><h2>Automation & teams</h2><p>Native delegation, persistent goals, cron, hooks, kanban, bot routines, and multi-profile workflows. Admin screens are not included in v0.1.</p><button class="text-link" data-doc="user-guide/features/delegation">Delegation documentation ↗</button></div>
-<div class="feature-card"><h2>Media & other surfaces</h2><p>Voice, vision, image generation, messaging gateways, desktop, dashboard, and API integrations. Dedicated media controls are planned, not implemented.</p><button class="text-link" data-doc="user-guide/features/overview">Full feature overview ↗</button></div>
+<div class="section-title"><div><h1>Your Hermes profile</h1><p class="caption">The memory and persona the agent actually loads.</p></div><span class="badge">v0.1.22</span></div>
+<p class="caption">These files live in your Hermes profile (<code id="profile-home">HERMES_HOME</code>). Edits are written to disk when you press Save; they apply to the next session.</p>
+<div id="profile-files"></div>
+<div class="feature-card"><h2>Skills, tools & automation</h2><p>Skills, tools, MCP servers, delegation, goals, cron and hooks stay managed by Hermes itself. Everything on this tab comes from the profile on disk.</p><button class="text-link" data-doc="user-guide/features/overview">Full feature overview ↗</button></div>
 <button id="logs" class="secondary">Show connection log</button>
 </section>
+<dialog id="model-picker" aria-labelledby="model-picker-title">
+<div class="picker-head"><h2 id="model-picker-title">Choose a model</h2><button type="button" id="picker-close" class="quiet" aria-label="Close the model picker">×</button></div>
+<div class="picker-body">
+<div class="picker-lists">
+<label for="picker-provider">Provider</label>
+<select id="picker-provider" aria-label="Provider"></select>
+<div class="picker-columns">
+<section class="picker-column" aria-labelledby="favorites-title">
+<h3 id="favorites-title">Favorites</h3>
+<ul id="favorite-list" class="model-list" aria-label="Favorite models"></ul>
+<p id="favorites-empty" class="caption" hidden>Star a model under All models to keep it here.</p>
+</section>
+<section class="picker-column" aria-labelledby="all-models-title">
+<h3 id="all-models-title">All models</h3>
+<label class="sr-only" for="model-search">Filter models</label>
+<input id="model-search" type="search" placeholder="Filter models…" autocomplete="off">
+<ul id="model-list" class="model-list" aria-label="All models offered by this provider"></ul>
+</section>
+</div>
+</div>
+<aside class="picker-details" aria-live="polite">
+<h3>Model details</h3>
+<dl id="model-details"></dl>
+</aside>
+</div>
+<div class="picker-actions"><span id="picker-note" class="caption"></span><button type="button" id="picker-manual" class="quiet" title="Use a provider and model that Hermes did not list">Other…</button><button type="button" id="picker-use" disabled>Use this model</button></div>
+</dialog>
 <script nonce="{{nonce}}" src="{{scriptUri}}"></script>
 </body></html>

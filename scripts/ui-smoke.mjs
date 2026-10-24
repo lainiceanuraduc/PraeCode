@@ -182,7 +182,86 @@ try{
  assert.equal(await page.evaluate(()=>{const img=document.querySelector('#image-list img');return !!img&&img.naturalWidth>0;}),
   true,'a pasted image must decode: check the webview CSP img-src');
  await page.evaluate(()=>{document.querySelectorAll('#image-list .chip-remove').forEach(b=>b.click());});
- await page.screenshot({path:'docs/ui-dark.png',fullPage:true});
+ // ---- Model picker modal, resizable prompt, profile editor (0.1.22) ----------------
+await page.evaluate(()=>window.postMessage({type:'state',sessions:[{id:'s',title:'Test conversation',kind:'chat',status:'idle',messages:[],
+ models:[{modelId:'mistral:mistral-large-4',name:'Mistral \u00b7 mistral-large-4',description:'Provider: Mistral'},
+         {modelId:'mistral:codestral',name:'Mistral \u00b7 codestral',description:'Provider: Mistral'},
+         {modelId:'ollama-cloud:qwen3:32b',name:'Ollama Cloud \u00b7 qwen3:32b',description:'Provider: Ollama Cloud'}],
+ info:{model:'codestral',provider:'mistral',effort:'high',capabilities:{values:['none','high'],note:'n'}}}],
+ activeId:'s',presets:[],recent:[],appearance:{accent:'lime',fontFamily:'monospace',fontSize:13,lineHeight:0,compact:false}},'*'));
+await page.waitForTimeout(50);
+await page.locator('#model').click();
+await page.locator('#model-picker[open]').waitFor();
+assert.equal(await page.locator('#favorite-list .model-row').count(),0,'no favorites yet');
+assert.equal(await page.locator('#picker-provider option').count(),2,'one row per provider, from the ACP model ids');
+assert.equal(await page.locator('#model-list .model-row').count(),2,'the selected provider lists its own models');
+// Starring under All models adds; starring again in Favorites removes.
+await page.locator('#model-list li[data-model-id="mistral:mistral-large-4"] .star').click();
+assert.deepEqual(await page.evaluate(()=>{const m=window.sent.at(-1);return {type:m.type,id:m.id,on:m.on};}),
+ {type:'favorite',id:'mistral:mistral-large-4',on:true});
+await page.evaluate(()=>window.postMessage({type:'favorites',ids:['mistral:mistral-large-4']},'*'));
+await page.waitForTimeout(50);
+assert.equal(await page.locator('#favorite-list .model-row').count(),1,'the star lands in Favorites');
+await page.locator('#favorite-list .star').click();
+assert.equal(await page.evaluate(()=>window.sent.at(-1).on),false,'the same star removes it');
+await page.evaluate(()=>window.postMessage({type:'favorites',ids:[]},'*'));
+await page.waitForTimeout(50);
+assert.equal(await page.locator('#favorite-list .model-row').count(),0);
+// Selecting a row asks the host for that model's real details and renders them.
+await page.locator('#model-list li[data-model-id="mistral:codestral"] .model-row').click();
+assert.deepEqual(await page.evaluate(()=>{const m=window.sent.at(-1);return {type:m.type,provider:m.provider,model:m.model};}),
+ {type:'modelInfo',provider:'mistral',model:'codestral'});
+await page.evaluate(()=>window.postMessage({type:'modelDetails',details:{provider:'mistral',providerLabel:'Mistral',model:'codestral',
+ baseUrl:'https://api.mistral.ai/v1',lab:'Mistral AI',context:131072,contextSource:'provider',catalogName:'Codestral',
+ capabilities:{values:['none','high'],note:'Mistral API ladder'}}},'*'));
+await page.waitForTimeout(50);
+const details=await page.locator('#model-details').textContent();
+assert.match(details,/Mistral AI/,'the lab name is shown');
+assert.match(details,/131,072 tokens/,'the context window is shown');
+assert.match(details,/none, high/,'the thinking/effort ladder is shown');
+await page.locator('#picker-use').click();
+assert.deepEqual(await page.evaluate(()=>{const m=window.sent.at(-1);return {type:m.type,id:m.id,value:m.value};}),
+ {type:'useModel',id:'s',value:'mistral:codestral'});
+assert.equal(await page.locator('#model-picker[open]').count(),0,'the modal closes on use');
+
+// A grab bar above the prompt resizes it (keyboard path: the drag path uses the same clamp).
+const beforeHeight=await page.locator('#message').evaluate(el=>el.getBoundingClientRect().height);
+await page.locator('#composer-resize').focus();
+await page.locator('#composer-resize').press('ArrowUp');
+const afterHeight=await page.locator('#message').evaluate(el=>el.getBoundingClientRect().height);
+assert.ok(afterHeight>beforeHeight,`arrow-up grows the prompt (${beforeHeight} -> ${afterHeight})`);
+
+// Features shows the real profile, editable with an explicit Save.
+await page.getByRole('tab',{name:'Features'}).click();
+assert.equal(await page.evaluate(()=>window.sent.at(-1).type),'profile','opening Features reads the profile');
+await page.evaluate(()=>window.postMessage({type:'profile',home:'/home/me/.hermes',files:[
+ {id:'soul',title:'SOUL.md',description:'Persona.',path:'/home/me/.hermes/SOUL.md',content:'Be terse.',exists:true},
+ {id:'user',title:'User memory',description:'About you.',path:'/home/me/.hermes/memories/USER.md',content:'Likes tests.',exists:true},
+ {id:'memory',title:'Agent memory',description:'Notes.',path:'/home/me/.hermes/memories/MEMORY.md',content:'',exists:false}]},'*'));
+await page.locator('#profile-files .profile-card').first().waitFor();
+assert.equal(await page.locator('#profile-files .profile-card').count(),3,'SOUL.md and both memory files');
+assert.equal(await page.getByLabel('SOUL.md contents').inputValue(),'Be terse.');
+assert.equal(await page.locator('#profile-files .profile-save').first().isDisabled(),true,'Save waits for an edit');
+await page.getByLabel('SOUL.md contents').fill('Be terse and kind.');
+await page.locator('#profile-files .profile-save').first().click();
+assert.deepEqual(await page.evaluate(()=>{const m=window.sent.at(-1);return {type:m.type,id:m.id,text:m.text};}),
+ {type:'saveProfile',id:'soul',text:'Be terse and kind.'});
+await page.evaluate(()=>window.postMessage({type:'profileSaved',id:'soul',savedAt:'12:00'},'*'));
+await page.waitForTimeout(50);
+assert.match(await page.locator('#profile-files .profile-status').first().textContent(),/Saved 12:00/);
+// An approval raised while another tab is open stays on screen: no more silent denials.
+await page.evaluate(()=>window.postMessage({type:'permission',requestId:'r2',sessionId:'s',sessionTitle:'Test conversation',
+ title:'Edit src/app.ts',summary:'Edit src/app.ts',tool:'edit',
+ options:[{optionId:'allow_once',kind:'allow_once',label:'Allow once',role:'allow'},
+          {optionId:'deny',kind:'reject_once',label:'Deny',role:'deny'}]},'*'));
+await page.locator('.permission-card').waitFor();
+assert.equal(await page.getByRole('button',{name:'Allow once'}).isVisible(),true,'visible from the Features tab too');
+await page.evaluate(()=>window.postMessage({type:'permissionSettled',requestId:'r2'},'*'));
+await page.waitForTimeout(50);
+await page.getByRole('tab',{name:'Chat',exact:true}).click();
+
+// ---- Screenshots ---------------------------------------------------------------
+await page.screenshot({path:'docs/ui-dark.png',fullPage:true});
  await page.route('http://radcode.test/theme.css',route=>route.fulfill({contentType:'text/css',body:':root{--vscode-sideBar-background:#fafafa;--vscode-editor-background:#fff;--vscode-foreground:#242424;--vscode-input-background:#fff;--vscode-input-foreground:#242424;--vscode-descriptionForeground:#545454;--vscode-widget-border:#c8c8c8;--vscode-button-background:#005fb8;--vscode-button-foreground:#fff;}'}));
  await page.addStyleTag({url:'http://radcode.test/theme.css'});
  await page.screenshot({path:'docs/ui-light.png',fullPage:true});

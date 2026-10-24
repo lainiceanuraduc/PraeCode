@@ -192,3 +192,63 @@ dialog,.approval-details{max-height:80vh;overflow:auto}
 .message pre,.message code{font-size:var(--font-detail)}
 .message pre code{font-size:inherit}
 #composer textarea,.route .model,#effort,.mode-select{font-size:var(--ui-size)}
+
+/* ---- Resizable prompt -----------------------------------------------------------
+ * The grab bar sits above the textarea and owns the drag: the textarea keeps resize:none so the
+ * browser's own corner handle cannot fight the host-remembered height. */
+.composer-resize{display:flex;align-items:center;justify-content:center;height:12px;margin:2px 8px 0;
+ cursor:row-resize;touch-action:none;border-radius:4px;flex:none}
+.composer-resize::before{content:'';width:46px;height:4px;border-radius:2px;background:var(--border)}
+.composer-resize:hover::before,.composer-resize.dragging::before{background:var(--accent)}
+.composer-resize:focus-visible{outline:2px solid var(--focus,var(--highlight));outline-offset:-2px}
+#composer textarea{resize:none;max-height:60vh;overflow-y:auto}
+
+/* ---- Model picker modal ---------------------------------------------------------
+ * Two lists side by side (favorites, the provider's whole catalog) with the selected model's real
+ * details beside them. It scrolls internally, so a 200-model provider list cannot grow the view. */
+#model-picker{width:min(820px,94vw);max-height:86vh;padding:0;border:1px solid var(--border);
+ border-radius:10px;background:var(--vscode-editor-background,var(--panel));color:var(--fg);overflow:hidden}
+#model-picker::backdrop{background:rgba(0,0,0,.55)}
+.picker-head{display:flex;align-items:center;justify-content:space-between;gap:8px;
+ padding:10px 14px;border-bottom:1px solid var(--border)}
+.picker-head h2{margin:0}
+.picker-body{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;
+ padding:12px 14px;overflow:auto;max-height:calc(86vh - 104px)}
+.picker-lists{min-width:0}
+.picker-columns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.picker-column{min-width:0;display:flex;flex-direction:column;gap:4px}
+.picker-column h3,.picker-details h3{margin:0;font-size:var(--font-detail);color:var(--muted);
+ text-transform:uppercase;letter-spacing:.6px;font-weight:500}
+.model-list{list-style:none;margin:0;padding:0;overflow-y:auto;max-height:46vh;
+ border:1px solid var(--border);border-radius:6px;min-height:120px}
+.model-list li{display:flex;align-items:center;gap:1px;padding:1px 4px 1px 2px;border-bottom:1px solid var(--border)}
+.model-list li:last-child{border-bottom:0}
+.model-list li.selected{box-shadow:inset 2px 0 0 var(--accent);background:rgba(127,127,127,.12)}
+.model-list li.caption{border:0;padding:8px;display:block;color:var(--muted);font-size:var(--font-min)}
+.model-row{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+ background:none;border:0;color:var(--fg);padding:5px 6px;text-align:left;border-radius:4px;cursor:pointer}
+.model-row:hover:not(:disabled){background:rgba(127,127,127,.14);filter:none}
+.model-name{font-size:var(--ui-size);overflow-wrap:anywhere}
+.model-meta{font-size:var(--font-min);color:var(--muted)}
+.star{flex:none;background:none;border:0;color:var(--muted);padding:2px 5px;font-size:var(--ui-size);line-height:1}
+.star.filled{color:var(--accent)}
+.star:hover:not(:disabled){color:var(--accent-hover);filter:none;background:none}
+.picker-details{min-width:0;border-left:1px solid var(--border);padding-left:12px}
+#model-details{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin:8px 0 0;font-size:var(--font-detail)}
+#model-details dt{color:var(--muted);white-space:nowrap}
+#model-details dd{margin:0;overflow-wrap:anywhere}
+.picker-actions{display:flex;align-items:center;gap:10px;justify-content:flex-end;
+ padding:10px 14px;border-top:1px solid var(--border)}
+.picker-actions .caption{margin-right:auto}
+
+/* ---- Features: the profile editor ------------------------------------------------- */
+.profile-card{border:1px solid var(--border);border-radius:7px;padding:12px;margin:10px 0;background:var(--panel)}
+.profile-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.profile-head h2{margin:0}
+.profile-path{font-family:var(--vscode-editor-font-family,monospace);overflow-wrap:anywhere;opacity:.8}
+.profile-card textarea{font-family:var(--vscode-editor-font-family,monospace);font-size:var(--font-detail);line-height:1.5}
+.profile-card .actions{margin-top:8px}
+#features code{font-size:var(--font-detail)}
+
+@media(max-width:620px){.picker-body{grid-template-columns:minmax(0,1fr)}
+ .picker-details{border-left:0;border-top:1px solid var(--border);padding:10px 0 0}}
