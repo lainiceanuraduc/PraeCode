@@ -9,8 +9,8 @@
 <header class="brand"><span class="mark" aria-hidden="true">H</span><div><strong>HERMES</strong><span class="subtitle">Your workspace, with an agent.</span></div><button id="settings" class="quiet" title="Extension settings" aria-label="Extension settings">⚙</button></header>
 <div id="text-size-row" class="text-size-row" hidden>
 <label for="text-size">Text size</label>
-<input id="text-size" type="range" min="10" max="20" step="1" value="13" aria-label="Text size in pixels">
-<output id="text-size-value" for="text-size">13</output>
+<input id="text-size" type="range" min="1" max="30" step="1" value="10" aria-label="Text size in pixels">
+<output id="text-size-value" for="text-size">10</output>
 </div>
 <nav class="tabs" role="tablist" aria-label="Hermes sections">
 <button role="tab" aria-selected="true" aria-controls="chat" id="tab-chat" data-tab="chat">Chat</button>
@@ -26,7 +26,7 @@
 <div id="route" class="route" hidden><button id="model" class="model" title="Change provider and model">Select model</button><label for="effort">Thinking effort</label><select id="effort" aria-label="Thinking effort"><option value="default">Default</option></select><span id="effort-note" class="caption"></span><label class="thinking-label"><input id="show-thinking" type="checkbox">Show reasoning</label></div>
 <div id="warning" class="warning" hidden></div>
 
-<div id="welcome" class="welcome"><span class="eyebrow">PRAECODE · VERSION 0.1.25</span><h1>Make room for<br>your next idea.</h1><p>Chat with Hermes in your project. Inspect its tool activity and give focused work to configurable agents.</p><button id="connect">Connect to Hermes</button><p class="caption">Uses your existing Hermes login and profile.<br>Tools can modify files and run commands.</p></div>
+<div id="welcome" class="welcome"><span class="eyebrow">PRAECODE · VERSION 0.1.29</span><h1>Make room for<br>your next idea.</h1><p>Chat with Hermes in your project. Inspect its tool activity and give focused work to configurable agents.</p><button id="connect">Connect to Hermes</button><p class="caption">Uses your existing Hermes login and profile.<br>Tools can modify files and run commands.</p></div>
 <h2 id="session-title" class="session-title" hidden></h2>
 <div id="transcript" role="log" aria-label="Conversation transcript" aria-live="off" tabindex="0"></div>
 <div class="status-line"><span class="status-spinner" data-state="idle" aria-hidden="true"><i class="dot"></i><i class="dot"></i><i class="dot"></i></span><span id="status" role="status" aria-live="polite">Not connected</span><label class="sr-only" for="mode">Approval mode</label><select id="mode" class="mode-select" title="When Hermes must ask before editing files" hidden><option value="">Approvals</option></select><div class="context-meter" id="context-meter" hidden><div class="meter" role="progressbar" id="context-bar" aria-label="Context used" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="context-fill"></span></div><span id="context-text" class="caption">—</span><button type="button" id="compact" class="quiet" title="Summarise older turns to free context (Hermes /compress)">Compact</button></div></div>
@@ -43,7 +43,7 @@
 <p class="caption">Enter attaches the first match. Attachments are read by the editor at send time.</p>
 </div>
 </div>
-<div class="composer-actions"><button type="button" id="context-toggle" class="quiet context-button" aria-expanded="false" aria-controls="context-menu" title="Add files from this workspace as context">＋ Context</button><button type="button" id="screenshot" class="quiet" title="Capture a screenshot for the model">◎ Screenshot</button><span class="caption">Ctrl/⌘ Enter</span><button type="button" id="stop" class="secondary" title="Stop the running turn" disabled><span aria-hidden="true">■</span> Stop</button><button type="submit" id="send" disabled><span aria-hidden="true">▶</span> Send</button></div></form>
+<div class="composer-actions"><div class="action-group"><button type="button" id="context-toggle" class="quiet context-button" aria-expanded="false" aria-controls="context-menu" title="Add files from this workspace as context">+ Context</button><button type="button" id="screenshot" class="quiet" title="Capture a screenshot for the model">Screenshot</button></div><span class="caption">Ctrl/⌘ Enter</span><button type="button" id="stop" class="secondary" title="Stop the running turn" disabled><span aria-hidden="true">■</span> Stop</button><button type="submit" id="send" disabled><span aria-hidden="true">▶</span> Send</button></div></form>
 </section>
 <section id="agents" role="tabpanel" aria-labelledby="tab-agents" hidden>
 <div class="section-title"><div><h1>Your agent team</h1><p class="caption">Named workers. Separate conversations.</p></div><button id="new-preset">New preset</button></div>
@@ -63,7 +63,7 @@
 <h2>Worker runs</h2><div id="worker-runs"><p class="caption">No workers started yet.</p></div>
 </section>
 <section id="features" role="tabpanel" aria-labelledby="tab-features" hidden>
-<div class="section-title"><div><h1>Your Hermes profile</h1><p class="caption">The memory and persona the agent actually loads.</p></div><span class="badge">v0.1.25</span></div>
+<div class="section-title"><div><h1>Your Hermes profile</h1><p class="caption">The memory and persona the agent actually loads.</p></div><span class="badge">v0.1.29</span></div>
 <p class="caption">These files live in your Hermes profile (<code id="profile-home">HERMES_HOME</code>). Edits are written to disk when you press Save; they apply to the next session.</p>
 <div id="profile-files"></div>
 <div class="feature-card"><h2>Skills, tools & automation</h2><p>Skills, tools, MCP servers, delegation, goals, cron and hooks stay managed by Hermes itself. Everything on this tab comes from the profile on disk.</p><button class="text-link" data-doc="user-guide/features/overview">Full feature overview ↗</button></div>

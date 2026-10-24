@@ -22,6 +22,8 @@ export interface SessionControl {
  compact(sessionId: string, focus?: string): Promise<{sessionId:string;compressed:boolean;messages?:number;summary?:string}>;
  /** Fetch the effort ladder for a model without mutating anything (for the selector). */
  capabilities(provider: string, model: string, baseUrl?: string): Promise<EffortCapabilities>;
+/** Conversations Hermes persists for this workspace; the editor keeps no transcript of its own. */
+ sessions(cwd: string): Promise<{id:string;title:string;cwd:string;messages:number;updatedAt:string}[]>;
  /** Facts about a model the session is not running on yet: lab, context window, effort ladder. */
  modelInfo(provider: string, model: string, baseUrl?: string): Promise<ModelDetails>;
 }
@@ -36,6 +38,7 @@ export class HermesControl implements SessionControl {
  compact(sessionId: string, focus = ''): Promise<{sessionId:string;compressed:boolean;messages?:number;summary?:string}> { return this.invoke({action:'compact',sessionId,focus}); }
  capabilities(provider: string, model: string, baseUrl = ''): Promise<EffortCapabilities> { return this.invoke({action:'catalog',provider,model,baseUrl}); }
  modelInfo(provider: string, model: string, baseUrl = ''): Promise<ModelDetails> { return this.invoke({action:'modelinfo',provider,model,baseUrl}); }
+ sessions(cwd: string): Promise<{id:string;title:string;cwd:string;messages:number;updatedAt:string}[]> { return this.invoke({action:'sessions',cwd}); }
  private async command(): Promise<string[]> {
   if(this.python) return [this.python,this.script];
   const {stdout}=await promisify(execFile)(this.hermes,['--print-runtime-command','--module',path.basename(this.script,'.py')],{timeout:30_000,windowsHide:true})

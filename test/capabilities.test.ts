@@ -24,6 +24,7 @@ const control:SessionControl={
  compact:async(id)=>{compacted++;return {sessionId:id,compressed:true,messages:1};},
  capabilities:async()=>({values:['none','low','high'],note:'test fixture'}),
  modelInfo:async()=>({provider:'p',providerLabel:'P',model:'m',baseUrl:'',lab:'',context:null,contextSource:'',catalogName:'',capabilities:{values:[],note:''}}),
+ sessions:async()=>[],
 };
 const PNG='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 

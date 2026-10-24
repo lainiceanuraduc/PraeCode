@@ -23,6 +23,7 @@ const control:SessionControl={
  compact:async(id:string)=>({sessionId:id,compressed:true,messages:0}),
  capabilities:async(p:string,m:string)=>({values:['none','low','high'],note:'test fixture'}),
  modelInfo:async()=>({provider:'p',providerLabel:'P',model:'m',baseUrl:'',lab:'',context:null,contextSource:'',catalogName:'',capabilities:{values:[],note:''}}),
+ sessions:async()=>[],
  rename:async(id:string,title:string)=>({sessionId:id,title})
 };
 

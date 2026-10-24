@@ -1,10 +1,10 @@
 # PraeCode — Hermes Agent for VS Code
 
-[![Version](https://img.shields.io/badge/version-0.1.25-e5b93c)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.29-e5b93c)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-e5b93c)](LICENSE)
 [![GitHub](https://img.shields.io/badge/source-GitHub-e5b93c)](https://github.com/lainiceanuraduc/PraeCode)
 
-A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.25.
+A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.29.
 It talks to your existing Hermes installation over **ACP** (Agent Client Protocol) — no API keys are
 stored in VS Code, and no Hermes configuration is modified.
 
@@ -57,13 +57,33 @@ Extension Development Host.
 > missing.
 
 
-## What's new in 0.1.25
+## What's new in 0.1.27
+
+- **Your type, your hierarchy.** The size slider covers **1–30** (default 10). Prompts, responses and
+  code are regular weight at exactly that size; buttons, dropdowns, tabs, headings and the model picker
+  are 1.4×–1.6× larger and **bold**.
+- **Conversations are no longer lost on update.** Startup merges the saved-session index instead of
+  overwriting it, every stored conversation appears in the picker, the last one is resumed, and the
+  list itself is re-read from Hermes' `state.db` so a reinstalled extension can recover it.
+
+## What's new in 0.1.26
+
+- **Sizes rebalanced for the pixel face.** Public Pixel advances a full em per character, so the same
+  pixel size reads much wider than a sans face. The text-size floor is now 13 px (the slider and the
+  setting no longer go to 10), messages, prompt, model button and actions all sit at that base size,
+  and the picker's detail values get a column wide enough to read as sentences.
+- **One centred reading column on wide windows.** Text, composer and panels stop at 1000 px instead of
+  stretching to 1900 px, which is what made rows of buttons look broken rather than large.
+- **Content-sized controls.** Menu tabs hug their labels and the composer actions wrap only when the
+  row cannot hold them, so "Screenshot" is never clipped or split mid-word.
+
+## Previous release: 0.1.25
 
 - Public Pixel throughout the extension: messages, code, controls and profile editors.
 - Preserved size, bold and italic variations; removed font-family overrides.
 - Two-column composer actions and scrollable tabs keep the wider pixel text usable.
 
-## Previous release: 0.1.24
+## 0.1.24
 
 - **Model picker modal.** The model button opens a dialog with two lists: **Favorites** (kept by the
   extension in VS Code global state) and **All models** for the selected provider. Star a model to
@@ -131,7 +151,7 @@ Marketplace, so no downloadable package carries it.
 | `radcode.pythonPath` | *(empty)* | Hermes' own Python interpreter for model-aware effort controls. Only needed if `hermes --print-runtime-command` is unavailable. Never point this at an unrelated system Python. |
 | `radcode.maxParallelAgents` | `2` | How many PraeCode worker sessions may run at once. |
 | `radcode.accent` | `yellow` | Highlight colour: yellow, amber, orange, lime, teal, violet, magenta, blue. Drives focus rings, links, active tab, composer and attachment chips. Light editor themes automatically get a darkened text variant. |
-| `radcode.fontSize` | `16` | Base size in px (10–20). Tabs, wordmark, logo and the text-size control sit 20% above it; metadata keeps a 13px floor. |
+| `radcode.fontSize` | `10` | Reading size in px (1–30). Only prompts, responses and code use it; controls, tabs, headings and the model picker are 1.4–1.6× larger and bold. |
 | `radcode.lineHeight` | `0` | Line-height multiplier; `0` follows the editor. |
 | `radcode.compact` | `false` | Tighter spacing for narrow sidebars. |
 
@@ -253,7 +273,7 @@ npm test              # unit tests (transport, ACP, presets, sessions, control)
 npm run test:python   # Hermes-side helper tests (needs Hermes' Python)
 npm run test:ui       # Playwright: rendering, CSP, sanitization, capability select, a11y labels
 npm run test:live     # real ACP handshake + session + effort read-back
-npm run package       # produces praecode-0.1.25.vsix
+npm run package       # produces praecode-0.1.29.vsix
 ```
 
 The extension-host test (`test/extension-host.ts`) is run in a real editor:

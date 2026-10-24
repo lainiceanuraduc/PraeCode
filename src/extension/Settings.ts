@@ -43,7 +43,7 @@ export function appearance(fallbackFontSize?:number):Appearance{
   // When the running manifest predates `radcode.fontSize`, the configured value reads as the
   // default; the caller passes the value mirrored in extension state so the slider still holds.
   const configured=c.get<number>('fontSize',0);
-  const fontSize=clampTextSize(configured>0?configured:(fallbackFontSize??16));
+  const fontSize=clampTextSize(configured>0?configured:(fallbackFontSize??10));
   return {accent:c.get<string>('accent','yellow'),
           fontSize,lineHeight:c.get<number>('lineHeight',0),compact:c.get<boolean>('compact',false)};
  }
@@ -51,5 +51,5 @@ export function appearance(fallbackFontSize?:number):Appearance{
 /** One clamp, shared by the settings reader and the text-size command. */
 export function clampTextSize(value:number):number{
  const n=Math.round(Number(value));
- return Number.isFinite(n)?Math.min(20,Math.max(10,n)):13;
+ return Number.isFinite(n)?Math.min(30,Math.max(1,n)):13;
 }

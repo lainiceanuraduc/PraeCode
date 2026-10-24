@@ -96,6 +96,7 @@ export class SessionController extends EventEmitter {
    this.changed();
   });
  }
+ async listSaved(){return this.control.sessions(this.cwd());}
  get active():ConversationSession|undefined{return this.sessions.find(s=>s.id===this.activeId);}
  /** Context usage for one session, preferring the live stream over a static inspect. */
  usage(id:string):ConversationSession['context']{
@@ -124,6 +125,7 @@ export class SessionController extends EventEmitter {
   let s=this.sessions.find(s=>s.id===id);
   if(s&&s.status!=='disconnected'){this.select(id);return;}
   if(!s){s=new ConversationSession(id,title,'chat',cwd);this.sessions.push(s);}
+  const previous=s.messages.slice();
   s.messages.splice(0);s.status='configuring';this.activeId=id;this.changed();
   try{
    const result=await this.client.loadSession(id,cwd,this.mcpServers());
@@ -133,7 +135,7 @@ export class SessionController extends EventEmitter {
    s.status='idle';await this.refresh(s);
    void this.refreshLadder(s.id);  // and on resume
   }
-  catch(e){s.status='disconnected';s.warning=String(e);throw e;}
+  catch(e){s.messages.splice(0,s.messages.length,...previous);s.status='disconnected';s.warning=String(e);throw e;}
   finally{this.changed();}
  }
  async refresh(s:ConversationSession):Promise<void>{

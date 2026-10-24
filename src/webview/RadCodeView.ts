@@ -64,7 +64,7 @@ export class RadCodeView {
   // host persist it into radcode.fontSize so it survives a reload.
   const size=element<HTMLInputElement>('text-size');
   size.oninput=()=>{
-   const value=Math.min(20,Math.max(10,Number(size.value)||16));
+   const value=Math.min(30,Math.max(1,Number(size.value)||10));
    element('text-size-value').textContent=String(value);
    this.applyFontSize(value);
    this.post({type:'textSize',value});
@@ -234,7 +234,7 @@ export class RadCodeView {
   row.hidden=!visible;
   if(!visible)return;
   const size=element<HTMLInputElement>('text-size');
-  const current=Math.round(Number(this.state.appearance?.fontSize)||16);
+  const current=Math.round(Number(this.state.appearance?.fontSize)||10);
   if(Number(size.value)!==current)size.value=String(current);
   element('text-size-value').textContent=String(current);
  }
@@ -270,7 +270,8 @@ export class RadCodeView {
   const busy=!!active&&['running','configuring','cancelling'].includes(active.status);
   const select=element<HTMLSelectElement>('sessions');select.replaceChildren();
   for(const s of this.state.sessions)select.add(new Option(`${s.kind==='worker'?'Worker · ':''}${s.title}`,s.id));
-  if(!this.state.sessions.length)select.add(new Option('No conversation',''));
+  for(const s of this.state.recent??[])if(!this.state.sessions.some(live=>live.id===s.id))select.add(new Option(s.title,s.id));
+  if(!select.options.length)select.add(new Option('No conversation',''));
   select.value=this.state.activeId;
   element('welcome').hidden=!!active;element('route').hidden=!active;
   element('warning').hidden=!active?.warning;element('warning').textContent=active?.warning??'';

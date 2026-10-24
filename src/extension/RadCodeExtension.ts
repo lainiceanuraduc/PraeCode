@@ -26,7 +26,7 @@ import {PermissionBroker} from './PermissionBroker';
 import {captureScreenshot} from './screenshot';
 
 /** A conversation this workspace has used, remembered for the resume picker. */
-interface RecentSession {id:string;title:string;cwd:string;profile:string;}
+import {mergeRecent, type RecentSession} from '../domain/RecentSessions';
 
 export class RadCodeExtension implements vscode.Disposable {
  readonly view:ChatViewProvider;
@@ -39,6 +39,8 @@ export class RadCodeExtension implements vscode.Disposable {
  private recentSignature='';
  private creation?:Promise<void>;
  private profile='';
+ private restoring?:Promise<void>;
+ private restored=false;
 
  constructor(private readonly context:vscode.ExtensionContext){
   this.output=vscode.window.createOutputChannel('PraeCode Hermes');
@@ -53,6 +55,7 @@ export class RadCodeExtension implements vscode.Disposable {
    this.view,
    vscode.window.registerWebviewViewProvider('radcode.chat',this.view,{webviewOptions:{retainContextWhenHidden:true}}));
 
+  this.profile=this.profileHome();
   this.registerCommands();
   this.watchEnvironment();
   this.publish();
@@ -165,6 +168,7 @@ export class RadCodeExtension implements vscode.Disposable {
 
  private publish():void{
   const sessions=this.service?.sessions??[];
+  if(this.service?.activeId)void this.context.workspaceState.update('activeSession',this.service.activeId);
   const activeId=this.service?.activeId??'';
 
   // Recent conversations: live ones first, then remembered ones this workspace has seen.
@@ -175,7 +179,7 @@ export class RadCodeExtension implements vscode.Disposable {
    const live=sessions.find(s=>s.id===entry.id);
    if(live)entry.title=live.title;
   }
-  const combined=[...added.reverse(),...recent.filter(r=>!added.some(s=>s.id===r.id&&s.profile===r.profile))].slice(0,30);
+  const combined=mergeRecent(recent,added);
   const signature=JSON.stringify(combined);
   if(signature!==this.recentSignature){
    this.recentSignature=signature;
@@ -189,9 +193,34 @@ export class RadCodeExtension implements vscode.Disposable {
    if(active?.info)active.info.context={...usage};
   }
 
-  this.view.stateChanged({type:'state',sessions,activeId,presets:this.presets.list(),recent:combined,
+  this.view.stateChanged({type:'state',sessions,activeId,presets:this.presets.list(),recent:combined.filter(s=>s.profile===this.profile),
    maxWorkers:vscode.workspace.getConfiguration('radcode').get('maxParallelAgents',2),
    editor:editorContext(),appearance:appearance(this.context.globalState.get<number>('radcode.textSize'))});
+ }
+
+ /** Restore the index from Hermes' on-disk catalog, then attach the last conversation. */
+ private async restoreSessions():Promise<void>{
+  if(this.restored||!vscode.workspace.isTrusted||!vscode.workspace.workspaceFolders?.length)return;
+  if(this.restoring)return this.restoring;
+  this.restoring=(async()=>{
+   const controller=this.controller;
+   const previous=this.context.workspaceState.get<RecentSession[]>('recentSessions',[]);
+   let discovered:RecentSession[]=[];
+   try{discovered=(await controller.listSaved()).map(s=>({id:s.id,cwd:s.cwd,title:s.title||'Saved conversation',profile:this.profile}));}
+   catch(error){this.output.appendLine(`Session catalog unavailable; keeping saved history: ${String(error)}`);}
+   const combined=mergeRecent(previous,discovered);
+   await this.context.workspaceState.update('recentSessions',combined);
+   const candidates=combined.filter(s=>s.profile===this.profile&&s.cwd===this.cwd());
+   const last=this.context.workspaceState.get<string>('activeSession','');
+   const active=candidates.find(s=>s.id===last)??candidates.find(s=>s.id===discovered[0]?.id)??candidates.at(-1);
+   this.restored=true;
+   if(active&&!controller.activeId){
+    try{await controller.resume(active.id,active.cwd,active.title);}
+    catch(error){this.view.post({type:'error',message:`Saved conversation could not be resumed. Its history has been kept: ${String(error)}`});}
+   }
+   this.publish();
+  })().finally(()=>{this.restoring=undefined;});
+  return this.restoring;
  }
 
  // ------------------------------------------------------------------ conversations
@@ -412,7 +441,12 @@ export class RadCodeExtension implements vscode.Disposable {
    },
    profile:()=>this.readProfileFiles(),
    saveProfile:m=>this.writeProfileFile(m),
-   select:(m,id)=>{this.controller.select(id());this.view.post({type:'showChat'});},
+   select:async(m,id)=>{
+    const saved=this.context.workspaceState.get<RecentSession[]>('recentSessions',[]).find(s=>s.id===id()&&s.profile===this.profile);
+    if(saved)await this.controller.resume(saved.id,saved.cwd,saved.title);
+    else this.controller.select(id());
+    this.view.post({type:'showChat'});
+   },
    rename:(m,id)=>{
     if(typeof m.title!=='string')throw new Error('Enter a session name');
     return this.controller.rename(id(),m.title);
@@ -512,7 +546,7 @@ export class RadCodeExtension implements vscode.Disposable {
   const m=message as Record<string,any>;
   const invalid=webviewMessageError(m);
   if(invalid)throw new Error(invalid);
-  if(m.type==='ready'){this.publish();return;}
+  if(m.type==='ready'){this.publish();await this.restoreSessions();return;}
   this.trusted();
   const handler=this.handlers()[m.type];
   if(!handler)throw new Error('Unsupported webview action');

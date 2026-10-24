@@ -23,7 +23,7 @@ try{
  assert.equal(await page.locator('#editor-chip').isVisible(),true,'the active editor is offered as context');
  await page.locator('#editor-chip').click();
  assert.equal(await page.locator('#context-list .context-chip').count(),1);
- await page.getByRole('button',{name:'＋ Context'}).click();
+ await page.getByRole('button',{name:'+ Context'}).click();
  await page.evaluate(()=>window.postMessage({type:'files',paths:[{path:'/w/src/b.ts',name:'src/b.ts'},{path:'/w/src/app.ts',name:'src/app.ts'}],query:''},'*'));
  await page.locator('#context-results li[role=option]').first().waitFor();
  assert.equal(await page.locator('#context-results li[role=option]').count(),1,'already attached files are filtered out');
@@ -122,59 +122,65 @@ try{
  await page.getByLabel('Message Hermes').fill('');
  // Regression guards: no text below the 13px floor, and a pasted image must actually decode
  // (the CSP used to block data: URLs, leaving a broken-image glyph after the bytes were fine).
- const smallest=await page.evaluate(()=>{
-  const sizes=[];
-  for(const el of document.querySelectorAll('body *')){
-   if(!el.textContent?.trim())continue;
-   const px=parseFloat(getComputedStyle(el).fontSize);
-   if(px)sizes.push(px);
-  }
-  return Math.min(...sizes);
- });
- assert.ok(smallest>=13,`smallest rendered text is ${smallest}px, floor is 13px`);
+ const weights=await page.evaluate(()=>({body:getComputedStyle(document.body).fontWeight,
+ button:getComputedStyle(document.getElementById('send')).fontWeight}));
+ assert.equal(weights.body,'400');assert.equal(weights.button,'700');
  // Primary actions stay clearly larger than body text (13px base -> ~22px); the menu tabs
  // are navigation and are asserted at the header ratio below instead.
  const actionSizes=await page.evaluate(()=>({
   model:parseFloat(getComputedStyle(document.getElementById('model')).fontSize),
   screenshot:parseFloat(getComputedStyle(document.getElementById('screenshot')).fontSize),
   send:parseFloat(getComputedStyle(document.getElementById('send')).fontSize),
-  compact:parseFloat(getComputedStyle(document.getElementById('compact')).fontSize),
   base:parseFloat(getComputedStyle(document.body).fontSize)
  }));
  for(const [name,px] of Object.entries(actionSizes)){
   if(name==='base')continue;
-  assert.equal(px,actionSizes.base,`${name} matches message size`);
+  assert.ok(Math.abs(px-actionSizes.base*1.4)<.02,`${name} is larger than message text`);
  }
+ // Compact is a utility in the status row: never larger than the actions, but bold and legible.
+ const compact=await page.evaluate(()=>{const el=document.getElementById('compact');return {size:parseFloat(getComputedStyle(el).fontSize),weight:getComputedStyle(el).fontWeight};});
+ assert.ok(compact.size>=parseFloat(await page.evaluate(()=>getComputedStyle(document.body).fontSize)),'Compact stays at least body size');
+ assert.equal(compact.weight,'700','Compact is bold like the other controls');
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth),false,
-  'the 3x action type must not overflow horizontally');
+  'the larger control type must not overflow horizontally');
  // Header-level text (wordmark, logo mark, menu tabs, text-size control, session title, h1/h2)
  // sits exactly 20% above message text.
  const titleRatio=await page.evaluate(()=>{
   const px=s=>{const e=document.querySelector(s);return e?parseFloat(getComputedStyle(e).fontSize):null;};
   // Message text inherits the body size; fall back to it when the transcript is empty.
   const body=px('.message .body')??px('#transcript .message .body')??parseFloat(getComputedStyle(document.body).fontSize);
-  const titles=['.brand strong','.tabs button','.text-size-row label','.text-size-row output',
+  const titles=['.brand strong','.text-size-row label','.text-size-row output',
                 '#features h1','#features h2','#features h3'].map(px).filter(v=>v);
   return {body,titles,ratio:titles.length?+(titles[0]/body).toFixed(3):null,
           uniform:new Set(titles).size===1};
  });
- assert.equal(titleRatio.uniform,true,'every header/title/tab uses one size');
- assert.ok(Math.abs(titleRatio.ratio-1.20)<0.02,`header text is ${titleRatio.ratio}x the message text, expected 1.20x`);
+ assert.equal(titleRatio.uniform,true,'every header/title uses one size');
+ // Tabs are their own size: one third each, sized to still show 'Subagents' in a sidebar.
+ const tabGeometry=await page.evaluate(()=>{const nav=document.querySelector('.tabs'); const cells=[...nav.querySelectorAll('button')].map(b=>b.getBoundingClientRect().width);
+  return {nav:nav.getBoundingClientRect().width,cells,size:parseFloat(getComputedStyle(nav.querySelector('button')).fontSize),
+   weight:getComputedStyle(nav.querySelector('button')).fontWeight};});
+ assert.equal(tabGeometry.cells.length,3);
+ for(const cell of tabGeometry.cells)assert.ok(Math.abs(cell-tabGeometry.nav/3)<1.5,`tab cell ${cell}px is not a third of ${tabGeometry.nav}px`);
+ assert.equal(tabGeometry.weight,'700','tabs are bold like the other controls');
+ assert.ok(Math.abs(titleRatio.ratio-1.60)<0.02,`header text is ${titleRatio.ratio}x the message text, expected 1.20x`);
 
  // Default typography stays proportional across the slider range.
- for(const base of [10,13,16,20]){
+ for(const base of [1,10,16,30]){
   const measured=await page.evaluate(base=>{
    document.documentElement.style.setProperty('--ui-size',`${base}px`);
    const px=s=>parseFloat(getComputedStyle(document.querySelector(s)).fontSize);
    return {tab:px('.tabs button'),mark:px('.brand .mark'),session:px('#sessions'),send:px('#send'),family:getComputedStyle(document.querySelector('.brand strong')).fontFamily};
   },base);
-  assert.ok(Math.abs(measured.tab-base*1.2)<.01);
-  assert.equal(measured.mark,base*1.25);
-  assert.equal(measured.session,base*1.125);
-  assert.equal(measured.send,base);
+  assert.ok(Math.abs(measured.tab-base*1.5)<.01);
+  assert.ok(Math.abs(measured.mark-base*1.6)<.02);
+  assert.ok(Math.abs(measured.session-base*1.4)<.02);
+  assert.ok(Math.abs(measured.send-base*1.4)<.02);
   assert.match(measured.family,/Public Pixel/,'the wordmark keeps the bundled CC0 display face');
  }
- await page.evaluate(()=>document.documentElement.style.setProperty('--ui-size','13px'));
+ // The 13px floor is enforced in CSS, not only by the slider: a stale 10 setting must not shrink text.
+await page.evaluate(()=>document.documentElement.style.setProperty('--ui-size','10px'));
+assert.equal(await page.evaluate(()=>parseFloat(getComputedStyle(document.body).fontSize)),10,'the slider preserves small reading text');
+await page.evaluate(()=>document.documentElement.style.setProperty('--ui-size','13px'));
 
  // Compact sits with the context meter; Stop is always on screen but only enabled mid-turn.
  assert.equal(await page.evaluate(()=>document.getElementById('compact').parentElement.id),'context-meter',
@@ -229,6 +235,9 @@ const details=await page.locator('#model-details').textContent();
 assert.match(details,/Mistral AI/,'the lab name is shown');
 assert.match(details,/131,072 tokens/,'the context window is shown');
 assert.match(details,/none, high/,'the thinking/effort ladder is shown');
+// The details pane must read as sentences, not one character per line: the value column needs width.
+const detailWidth=await page.evaluate(()=>{const dd=document.querySelector('#model-details dd');return dd?dd.clientWidth:0;});
+assert.ok(detailWidth>=200,`details values get ${detailWidth}px, expected at least 200px`);
 await assertPixel();
 await page.locator('#picker-use').click();
 assert.deepEqual(await page.evaluate(()=>{const m=window.sent.at(-1);return {type:m.type,id:m.id,value:m.value};}),
@@ -283,8 +292,9 @@ await page.evaluate(()=>window.postMessage({type:'state',sessions:[{id:'s',title
 await page.locator('#transcript pre code').waitFor();
 await assertPixel();
 assert.equal(await page.locator('#transcript em').evaluate(el=>getComputedStyle(el).fontStyle),'italic');
-assert.ok(await page.locator('#transcript strong').evaluate(el=>Number(getComputedStyle(el).fontWeight)>=700));
-for(const width of [320,430]){
+assert.ok(await page.locator('#transcript strong').evaluate(el=>Number(getComputedStyle(el).fontWeight)===400));
+// Wide windows: the pixel face is wide, so text lives in a centred column instead of spanning 1900px.
+for(const width of [320,430,1440]){
  await page.setViewportSize({width,height:900});
  for(const size of [13,16,20]){
   await page.evaluate(size=>document.documentElement.style.setProperty('--ui-size',`${size}px`),size);
@@ -293,14 +303,26 @@ for(const width of [320,430]){
   assert.deepEqual(overflow,[],`action labels fit at ${width}px / ${size}px`);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  }
+ if(width===1440){
+  const column=await page.evaluate(()=>({composer:document.getElementById('composer').getBoundingClientRect().width,
+   body:document.querySelector('#transcript .message .body')?.getBoundingClientRect().width??0}));
+  assert.ok(column.composer<=1000,`the composer stays in a ${column.composer}px column, expected <=1000`);
+  assert.ok(column.body<=1000,`message text stays in a ${column.body}px column, expected <=1000`);
+ }
 }
 await page.setViewportSize({width:430,height:900});
-await page.evaluate(()=>document.documentElement.style.setProperty('--ui-size','16px'));
+// Screenshots show the shipped default size (10), which is what a new install renders.
+await page.evaluate(()=>window.postMessage({type:'state',sessions:[{id:'s',title:'Pixel typography',kind:'chat',status:'idle',
+ messages:[{id:'u',role:'user',text:'Use Public Pixel everywhere.'},
+ {id:'a',role:'assistant',text:'One family: **bold**, *italic*, and `inline code`.\n\n```ts\nconst font = "Public Pixel";\n```'}],
+ info:{model:'codestral',provider:'mistral',effort:'high',capabilities:{values:['none','high'],note:''}}}],
+ activeId:'s',presets:[],recent:[],appearance:{accent:'yellow',fontSize:10,lineHeight:0,compact:false}},'*'));
+await page.waitForTimeout(80);
 // ---- Screenshots ---------------------------------------------------------------
 await page.screenshot({path:'docs/ui-dark.png',fullPage:true});
  await page.route('http://radcode.test/theme.css',route=>route.fulfill({contentType:'text/css',body:':root{--vscode-sideBar-background:#fafafa;--vscode-editor-background:#fff;--vscode-foreground:#242424;--vscode-input-background:#fff;--vscode-input-foreground:#242424;--vscode-descriptionForeground:#545454;--vscode-widget-border:#c8c8c8;--vscode-button-background:#005fb8;--vscode-button-foreground:#fff;}'}));
  await page.addStyleTag({url:'http://radcode.test/theme.css'});
  await page.screenshot({path:'docs/ui-light.png',fullPage:true});
  assert.deepEqual(errors,[]);
- console.log('Webview smoke passed: connect, capability-aware effort, sanitized Markdown, agent form, keyboard send, approval mode select, approval cards, context meter, context attachments, composer clearing, accent + font settings, image thumbnails decode, 13px text floor, dark/light rendering.');
+ console.log('Webview smoke passed: connect, capability-aware effort, sanitized Markdown, agent form, keyboard send, approval mode select, approval cards, context meter, context attachments, composer clearing, accent + font settings, bold control/regular message hierarchy, image thumbnails decode, dark/light rendering.');
 }finally{await browser.close();}

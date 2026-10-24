@@ -383,8 +383,45 @@ class HermesSessionControl:
         caps = EffortCatalog().resolve(provider, model, resolved)
         return summarize_model(provider, model, resolved, endpoint_entry, catalog_entry, caps, label)
 
+    def _sessions(self, cwd):
+        """Conversations this editor created for one workspace, read from Hermes' own database.
+
+        ACP's ``session/list`` only reports ``source='acp'`` rows, and those are the empty shells a
+        bare ``hermes acp`` probe leaves behind — the real transcripts are stored as
+        ``source='local'`` with ``created_source='acp'``. Listing through Hermes' DB layer (rather
+        than a second copy kept by the editor) means an update, a reinstall or a wiped extension
+        index cannot lose a conversation: Hermes owns the record, the editor only remembers which
+        id to resume.
+        """
+        import os
+        from pathlib import Path
+        home = Path(os.environ.get('HERMES_HOME') or (Path.home() / '.hermes'))
+        path = home / 'state.db'
+        if not path.exists():
+            return []
+        from hermes_state import SessionDB
+        rows = []
+        with SessionDB(db_path=path, read_only=True) as db:
+            rows = db.list_sessions_rich(sources=['acp', 'local'], local_created_sources=['acp'],
+                                         min_message_count=1, include_archived=True,
+                                         order_by_last_active=True, limit=500)
+        wanted = os.path.normpath(cwd) if cwd else ''
+        kept = []
+        for row in rows:
+            row_cwd = row.get('cwd') or ''
+            if wanted and os.path.normpath(row_cwd) != wanted:
+                continue
+            kept.append({'id': str(row.get('_lineage_root_id') or row.get('id') or ''),
+                         'title': str(row.get('title') or ''),
+                         'cwd': row_cwd,
+                         'messages': int(row.get('message_count') or 0),
+                         'updatedAt': row.get('last_active') or row.get('started_at')})
+        return kept[:200]
+
     async def execute(self, request):
         action = request.get('action')
+        if action == 'sessions':
+            return self._sessions(str(request.get('cwd') or ''))
         if action == 'catalog':
             return EffortCatalog().resolve(str(request.get('provider', '')), str(request.get('model', '')),
                                            str(request.get('baseUrl') or ''))

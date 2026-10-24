@@ -25,7 +25,7 @@ export function applyAppearance(a:Appearance|undefined):void{
  root.setProperty('--on-accent',palette.onAccent);
  root.setProperty('--highlight',palette.text);
  root.setProperty('--focus',palette.accent);
- if(a?.fontSize)root.setProperty('--ui-size',`${a.fontSize}px`);
+ if(a?.fontSize)root.setProperty('--ui-size',`${Math.min(30,Math.max(1,a.fontSize))}px`);
  if(a?.lineHeight)root.setProperty('--ui-leading',String(a.lineHeight));
  document.body.classList.toggle('compact',!!a?.compact);
 }

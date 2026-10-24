@@ -1,5 +1,47 @@
 # Changelog
 
+## 0.1.29
+
+- **Menu tabs are exactly one third each**, with centred labels and the active underline spanning the
+  whole third. Tab type sits at 1.5× the reading size (not 1.6×) so "Subagents" still fits a third of a
+  430px sidebar; narrower columns ellipsize instead of scrolling or overlapping.
+
+- **Composer actions are keycaps, not text.** Context, Screenshot, Stop and Send share one shape
+  (square corners, 1px border, hard offset shadow plus an inset bottom edge, 2.1× font-height tall)
+  and press in on `:active`. Send is the only filled accent action, Stop is a warning outline that
+  dims when there is nothing to cancel, and the quiet pair lights up in the accent on hover. The two
+  quiet actions wrap as a unit so Stop and Send always share the closing line, grouped on the right.
+- Compact follows the same shape at utility size rather than a bare 1px box.
+
+- **Type hierarchy inverted to what was asked for.** The size slider now runs **1–30** with a default of
+  10. Prompts, responses, reasoning and code render at that size in regular weight; buttons,
+  dropdowns, tabs, headings and the model picker are 1.4×/1.6× larger **and bold**, so prominence is
+  weight and size while reading text stays quiet. Message markdown bold is rendered regular so a reply
+  never looks like chrome.
+- **Conversations survive updates and reinstalls.** The history index used to be rebuilt on every
+  publish against a profile name that was still empty at startup, which could overwrite it with a
+  filtered-down copy; and nothing was restored when the view opened. Startup now merges rather than
+  replaces (per profile and id, no 30-row cap), lists every saved conversation in the picker, and
+  resumes the last one.
+- **Hermes is the source of truth for history.** New bridge action `sessions` reads the conversations
+  this editor created from Hermes' own `state.db` (`source='local'`/`created_source='acp'`), so a wiped
+  extension index is recoverable. ACP's `session/list` only sees the empty `source='acp'` probe shells,
+  which is why the extension could not find them before.
+- Resuming a conversation no longer throws its transcript away when the load fails.
+
+## 0.1.26
+
+- **Type sizes rebalanced for Public Pixel.** Its advance is a full em per character, so 10 px text was
+  both illegible and wide. `--ui-text: max(13px, var(--ui-size))` floors every size in CSS, the slider
+  and `radcode.fontSize` start at 13, and `clampTextSize` refuses anything lower.
+- **Reading column capped at 1000 px.** Header, tabs, transcript, composer, permissions and panels are
+  centred, so a 1920 px window no longer produces 1890 px message lines and 1000 px action cells.
+- **Tabs and composer actions are content-sized.** Tabs no longer stretch 600 px apart; the action row
+  wraps instead of clipping or splitting "Screenshot" mid-word.
+- **Model picker:** 1080 px wide, details stacked label-over-value with a value column of at least
+  200 px (was 93 px, which broke prose into one or two characters per line); the two model lists stack
+  below 620 px; the empty Favorites list shows one message, not two.
+
 ## 0.1.25
 
 - Use bundled Public Pixel for all webview text, including messages, code and profile editors.

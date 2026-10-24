@@ -124,9 +124,9 @@ export class ModelPicker {
    return found??{id,label:providerOf(id).model,provider:providerOf(id).provider,providerLabel:providerOf(id).provider};
   });
   for(const row of rows)list.append(this.row(row.id,row.label,row.providerLabel,true,()=>{}));
+  // One empty state, not two: the paragraph below the list says it, so the list itself stays empty
+  // (an empty <ul> is hidden by CSS) and never repeats the sentence inside a bordered box.
   element('favorites-empty').hidden=rows.length>0;
-  if(!rows.length){const p=document.createElement('li');p.className='caption';
-   p.textContent='Star a model under All models to keep it here.';list.append(p);}
  }
 
  private renderDetails(details:ModelDetailsView|undefined):void{

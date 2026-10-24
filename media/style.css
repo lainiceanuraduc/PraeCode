@@ -8,7 +8,7 @@
  * The :root variables below are the single source of truth. `body` and `button` here are
  * fallbacks only; the authoritative rules use var(--font-body) / var(--font-display) and
  * they come AFTER :root so they always win over the editor's --vscode-font-family. */
-:root{--font-pixel:'Public Pixel',ui-monospace,monospace;--font-display:var(--font-pixel);--font-body:var(--font-pixel);/* Smallest text in the view: scales with radcode.fontSize, floor 13px. */--font-min:max(13px, calc(var(--ui-size,13px) * 0.85));/* Primary actions and navigation: three times the base size. */--font-action:calc(var(--ui-size,13px) * 1.7);/* Menu tabs, logo and the text-size control: exactly 20% above the message text. */--font-title:calc(var(--ui-size,13px) * 1.2)}
+:root{--font-pixel:'Public Pixel',ui-monospace,monospace;--font-display:var(--font-pixel);--font-body:var(--font-pixel);/* The configured size, floored: no pixel text renders below 13px. */--ui-text:clamp(1px, var(--ui-size,10px), 30px);/* Smallest text in the view: scales with radcode.fontSize, floor 13px. */--font-min:max(13px, calc(var(--ui-text) * 0.85));/* Primary actions and navigation: three times the base size. */--font-action:var(--ui-text);/* Menu tabs, logo and the text-size control: exactly 20% above the message text. */--font-title:calc(var(--ui-text) * 1.2)}
 body,pre,code,kbd,samp{font-family:var(--font-body)}
 button,input,textarea,select{font-family:var(--font-body,system-ui,sans-serif)}
 button{font-family:var(--font-body,system-ui,sans-serif)}
@@ -16,7 +16,7 @@ button{font-family:var(--font-body,system-ui,sans-serif)}
 .message.thinking .body{font-family:var(--font-body,system-ui,sans-serif);font-style:italic}
 .message-time{color:var(--muted);font-size:var(--font-min,13px);margin-left:8px}
 :root{color-scheme:light dark;--bg:var(--vscode-sideBar-background,#18191d);--panel:var(--vscode-editor-background,#202127);--fg:var(--vscode-foreground,#dddfe6);--muted:var(--vscode-descriptionForeground,#a4a6b1);--border:var(--vscode-widget-border,#393b43);--accent:#e5b93c;--on-accent:#1c1a12;--accent-hover:#f0c95a;--accent-dim:rgba(229,185,60,.2);--highlight:#e5b93c}@media(prefers-color-scheme:light){:root{--highlight:#8a6300;--accent-dim:rgba(229,185,60,.35)}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:var(--ui-size,13px) var(--font-body);line-height:var(--ui-leading,1.55)}button,input,textarea,select{font:inherit}button{font-family:var(--font-display,'Public Pixel',monospace);border:1px solid transparent;border-radius:5px;padding:6px 11px;background:var(--accent);color:var(--on-accent);cursor:pointer}button:hover:not(:disabled){filter:brightness(1.12)}button:not(.quiet):not(.secondary):not(.text-link):hover:not(:disabled){background:var(--accent-hover);filter:none}button:disabled{opacity:.5;cursor:not-allowed}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--focus,var(--highlight));outline-offset:2px}input,textarea,select{color:var(--vscode-input-foreground,var(--fg));background:var(--vscode-input-background,var(--panel));border:1px solid var(--vscode-input-border,var(--border));border-radius:5px;padding:7px;width:100%;min-width:0}textarea{resize:vertical;line-height:1.5}input[type=checkbox]{width:auto}label{display:block;font-size:var(--font-min,13px);color:var(--muted);margin:8px 0 4px}h1{letter-spacing:-.5px;line-height:1.3;margin:0 0 5px}h2{margin:18px 0 8px}p{margin:7px 0 12px}.caption{font-size:var(--font-min,13px);color:var(--muted)}.brand{display:flex;gap:8px;align-items:center;padding:4px 12px 2px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:var(--ui-text) var(--font-body);line-height:var(--ui-leading,1.55)}button,input,textarea,select{font:inherit}button{font-family:var(--font-display,'Public Pixel',monospace);border:1px solid transparent;border-radius:5px;padding:6px 11px;background:var(--accent);color:var(--on-accent);cursor:pointer}button:hover:not(:disabled){filter:brightness(1.12)}button:not(.quiet):not(.secondary):not(.text-link):hover:not(:disabled){background:var(--accent-hover);filter:none}button:disabled{opacity:.5;cursor:not-allowed}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--focus,var(--highlight));outline-offset:2px}input,textarea,select{color:var(--vscode-input-foreground,var(--fg));background:var(--vscode-input-background,var(--panel));border:1px solid var(--vscode-input-border,var(--border));border-radius:5px;padding:7px;width:100%;min-width:0}textarea{resize:vertical;line-height:1.5}input[type=checkbox]{width:auto}label{display:block;font-size:var(--font-min,13px);color:var(--muted);margin:8px 0 4px}h1{letter-spacing:-.5px;line-height:1.3;margin:0 0 5px}h2{margin:18px 0 8px}p{margin:7px 0 12px}.caption{font-size:var(--font-min,13px);color:var(--muted)}.brand{display:flex;gap:8px;align-items:center;padding:4px 12px 2px}
 .brand>div{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;min-width:0}.brand strong{font-size:var(--font-min,13px);letter-spacing:2px}.brand .subtitle{display:block;font-size:var(--font-min,13px);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brand #settings{margin-left:auto}.mark{display:grid;place-items:center;border:1px solid var(--border);border-radius:9px;width:35px;height:35px;font-size:23px;font-weight:300;color:var(--highlight)}.quiet,.secondary{background:transparent;color:var(--fg);border-color:var(--border)}.quiet{border-color:transparent}.tabs{display:flex;border-bottom:1px solid var(--border);padding:0 12px;gap:6px}.tabs button{flex:1;border-radius:0;background:none;color:var(--muted);padding:9px 4px;border-bottom:2px solid transparent}.tabs button[aria-selected=true]{color:var(--fg);border-bottom-color:var(--highlight)}[hidden]{display:none!important}#chat{display:flex;flex-direction:column;height:calc(100vh - 121px);min-height:400px}.session-bar{display:flex;align-items:center;gap:4px;padding:2px 12px;flex-wrap:nowrap;min-width:0}
 .session-bar #sessions{flex:1 1 auto;min-width:0}.session-bar select{background:transparent;border:0}.rename-input{flex:1;min-width:0;padding:4px 6px;font-size:var(--font-min,13px);border-color:var(--focus,var(--highlight))}.route{display:flex;flex-wrap:wrap;gap:2px 8px;align-items:center;padding:0 12px 4px;border-bottom:1px solid var(--border)}.route .model{grid-column:1/-1;text-align:left;padding:0;background:none;color:var(--highlight);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.route label{margin:0}.route select{width:125px;padding:3px 5px}.route .model:hover{color:var(--accent-hover)}.route .caption{grid-column:1/-1}.welcome{padding:36px 22px 24px}.welcome h1{font-size:var(--font-title);font-weight:550;line-height:1.25;margin:12px 0}.welcome p{color:var(--muted);max-width:38em}.welcome button{margin:6px 0 10px}.eyebrow{letter-spacing:1.3px;font-size:var(--font-min,13px);color:var(--muted)}#transcript{flex:1;overflow:auto;padding:0 16px;min-height:96px;overflow-wrap:anywhere}.message{margin:16px 0}.message-label{font-size:var(--font-min,13px);letter-spacing:.4px;text-transform:uppercase;color:var(--muted);margin-bottom:5px}.message-time{margin-left:8px;letter-spacing:.4px;text-transform:none;color:var(--muted);opacity:.85}.message.user .body{padding:10px 12px;border:1px solid var(--border);border-left:2px solid var(--accent);border-radius:7px;background:var(--panel);white-space:pre-wrap}.message.notice{border-left:2px solid var(--vscode-editorWarning-foreground,#e1b35e);padding-left:10px}.message pre{white-space:pre-wrap;background:var(--panel);padding:10px;border:1px solid var(--border);border-radius:5px;font-size:var(--font-min,13px)}.message code{font-family:var(--font-body);font-size:var(--font-min,13px)}.message table{display:block;overflow:auto;border-collapse:collapse}.message td,.message th{border:1px solid var(--border);padding:5px}.message a{color:var(--highlight)}.message details{border:1px solid var(--border);border-radius:5px;padding:8px}.message details pre{border:0;padding:0;margin-bottom:0}.message summary{cursor:pointer;font-size:var(--font-min,13px)}.status-line{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:3px 12px;color:var(--muted);font-size:var(--font-min,13px)}.thinking-label{display:flex;align-items:center;gap:5px;font-size:var(--font-min,13px);margin:0}#composer{margin:0 10px 8px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--panel);box-shadow:inset 2px 0 0 transparent;transition:border-color .12s,box-shadow .12s}#composer textarea{background:transparent;border:0;border-radius:0;padding:6px 10px;min-height:36px;max-height:160px;display:block;resize:none}#composer textarea:focus-visible{outline-offset:-2px}
 .permissions{display:flex;flex-direction:column;gap:8px;padding:0 12px 6px;max-height:52vh;overflow:auto}
@@ -46,14 +46,14 @@ button{font-family:var(--font-body,system-ui,sans-serif)}
 .meter.warn span{background:var(--vscode-editorWarning-foreground,#e1b35e)}
 .meter.critical span{background:var(--vscode-errorForeground,#e06c75)}
 #context-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#compact{font-size:var(--font-min,13px);padding:2px 6px;border:1px solid var(--border);border-radius:4px;white-space:nowrap}
+
 .image-chip{gap:5px;padding-right:2px}
 .image-chip .chip-label{font-size:var(--font-min,13px);padding:2px 0;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .image-thumb{width:22px;height:22px;object-fit:cover;border-radius:3px;border:1px solid var(--border)}
 #error.info{background:var(--accent-dim);border-color:var(--focus,var(--highlight))}
 .context-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:0 7px 2px}
 .context-pick{display:flex;align-items:center;gap:6px;min-width:0;flex:1 1 100%}
-.context-button{font-size:var(--font-min,13px);padding:4px 8px;border:1px dashed var(--border);border-radius:5px;white-space:nowrap}
+.context-button{white-space:nowrap}
 .context-button:hover:not(:disabled),.context-button[aria-expanded=true]{border-color:var(--focus,var(--highlight));color:var(--focus,var(--highlight))}
 .editor-chip{font-size:var(--font-min,13px);padding:3px 8px;border-radius:10px;border:1px solid var(--border);color:var(--muted);background:transparent;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;text-align:left}
 .editor-chip:hover{border-color:var(--focus,var(--highlight));color:var(--fg)}
@@ -93,14 +93,47 @@ body.compact .message{margin:9px 0}body.compact #composer textarea{min-height:52
  * These are the view's primary targets, so they carry 1.7x the base font size; the menu
  * tabs are navigation and follow the header token instead (20% above the message text).
  * Layout is relaxed around them (wrapping, line-height) so the bigger text never clips. */
-.tabs{flex-wrap:nowrap;overflow-x:auto;row-gap:0;gap:0;padding:0 4px}
-.tabs button{font-size:var(--font-title);line-height:1.05;padding:1px 2px;min-width:0;flex:1 1 auto;
- white-space:nowrap;flex:1 0 auto}
-.route .model{font-size:var(--font-action);line-height:1;padding:3px 4px}
-.composer-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:4px;align-items:stretch;padding:0 2px 2px}
+.tabs{flex-wrap:nowrap;overflow-x:hidden;row-gap:0;gap:0;padding:0}
+/* Content-sized tabs: growing them across a 1900px window made four-word labels sit 600px apart. */
+/* Exactly one third each, label centred: the tab row is navigation, so its geometry is fixed and
+ * the label ellipsizes rather than reflowing the row. */
+.tabs button{flex:1 1 0;min-width:0;text-align:center;font-size:calc(var(--ui-text) * 1.5);line-height:1.05;
+ padding:4px 2px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.route .model{font-size:var(--font-action);line-height:1.15;padding:3px 4px;flex:0 1 auto;align-self:flex-start;
+ white-space:normal;overflow-wrap:break-word}
+/* ---- Composer actions: chunky pixel buttons --------------------------------------
+ * One shared shape for Context / Screenshot / Stop / Send: square-ish corners, a 2px border and a
+ * hard offset shadow (no blur) so the buttons read as pressed-in keycaps rather than flat text.
+ * Send is the only filled accent action; Stop is a warning outline; the two quiet ones stay muted
+ * until hover. Content-sized with wrapping, because Public Pixel advances a full em per character. */
+.composer-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:stretch;padding:2px 2px 2px;overflow-x:auto}
+/* The two quiet actions wrap as one unit, so Stop and Send always share the last line. */
+.action-group{display:flex;flex:0 0 auto;gap:6px;min-width:0}
 .composer-actions .caption{display:none}
-.composer-actions button{width:100%;min-width:0;text-align:center;white-space:normal;overflow-wrap:anywhere}
-#screenshot,#stop,#send,#compact,#context-toggle{font-size:var(--font-action);line-height:1;padding:2px 8px}
+.composer-actions button,#compact{
+ flex:0 0 auto;min-width:0;white-space:nowrap;text-align:center;
+ font-family:var(--font-body);font-weight:700;font-size:var(--font-action);line-height:1;
+ height:calc(var(--font-action) * 2.1);padding:0 .6em;border-radius:2px;
+ border:1px solid var(--border);
+ box-shadow:2px 2px 0 rgba(0,0,0,.5),inset 0 -2px 0 rgba(0,0,0,.35);
+ transition:transform .06s ease,box-shadow .06s ease,background-color .12s,color .12s,border-color .12s;
+}
+.composer-actions button:active:not(:disabled),#compact:active:not(:disabled){transform:translate(2px,2px);box-shadow:none}
+.composer-actions button:hover:not(:disabled),#compact:hover:not(:disabled){filter:none}
+/* Quiet: panel-coloured keycap that lights up in the accent on hover. */
+#context-toggle,#screenshot{background:var(--panel);border-color:var(--border);color:var(--fg)}
+#context-toggle:hover:not(:disabled),#screenshot:hover:not(:disabled),
+#context-toggle[aria-expanded=true]{background:var(--accent-dim);border-color:var(--accent);color:var(--accent-hover)}
+/* Stop: warning outline, accent-free, so it never competes with Send. */
+#stop{background:var(--panel);border-color:var(--vscode-editorWarning-foreground,#e1b35e);color:var(--vscode-editorWarning-foreground,#e1b35e)}
+#stop:hover:not(:disabled){background:rgba(225,179,94,.16)}
+/* Send: the one filled action, with the accent's darker edge under the shadow. */
+#stop{margin-left:auto}
+#send{background:var(--accent);border-color:var(--accent);color:var(--on-accent);
+ box-shadow:2px 2px 0 var(--border)}
+#send:hover:not(:disabled){background:var(--accent-hover);border-color:var(--accent-hover)}
+.composer-actions button:disabled,#compact:disabled{opacity:.42;box-shadow:none;transform:none}
+#compact{font-size:var(--font-detail);height:calc(var(--font-detail) * 1.9);padding:0 .5em}
 
 /* ---- Text-size control (under the context meter) -------------------------------- */
 .text-size-row{display:flex;align-items:center;gap:8px;padding:0 12px 2px;color:var(--muted)}
@@ -140,12 +173,12 @@ body.compact .message{margin:9px 0}body.compact #composer textarea{min-height:52
 .session-title{font-size:var(--font-title)}
 /* Icon-only buttons need a real target and a legible glyph next to the 3x actions. */
 .brand button,.session-bar button{font-size:15px;line-height:1;min-width:26px;min-height:26px;padding:0 3px}
-#sessions{font-size:var(--ui-size,13px)}
-.route label,.thinking-label,.agent-form label{font-size:var(--ui-size,13px);white-space:nowrap}
-.route .model{flex:1 1 100%}
+#sessions{font-size:var(--ui-text)}
+.route label,.thinking-label,.agent-form label{font-size:var(--ui-text);white-space:nowrap}
+.route .model{flex:0 1 auto}
 /* Selects must match the labels they sit beside, not the meta size. */
-#effort,.mode-select{font-size:var(--ui-size,13px)}
-.message-label{font-size:calc(var(--ui-size,13px) + 1px)}
+#effort,.mode-select{font-size:var(--ui-text)}
+.message-label{font-size:calc(var(--ui-text) + 1px)}
 
 /* ---- Application shell: the view itself never scrolls --------------------------
  * Only the scrolling sub-regions do (transcript, agents, features, long dialogs).
@@ -182,18 +215,18 @@ dialog,.approval-details{max-height:80vh;overflow:auto}
 .brand strong,.brand .mark,.session-title,h1,h2{font-size:var(--font-title)}
 
 /* Unified readable scale: defaults at a 16px message size. */
-:root{--ui-size:16px;--font-display:var(--font-pixel);--font-action:var(--ui-size);--font-min:max(13px,calc(var(--ui-size) * .8125));--font-detail:max(13px,calc(var(--ui-size) * .875))}
-.brand strong,.tabs button,.text-size-row label,.text-size-row output{font-size:var(--font-title)}
+:root{--ui-size:16px;--font-display:var(--font-pixel);--font-action:var(--ui-text);--font-min:max(13px,calc(var(--ui-text) * .8125));--font-detail:max(13px,calc(var(--ui-text) * .875))}
+.brand strong,.text-size-row label,.text-size-row output{font-size:var(--font-title)}
 /* All text uses Public Pixel, including controls, code and profile documents. */
-.tabs button,#screenshot,#stop,#send,#compact,#context-toggle,.brand button,.session-bar button{font-family:var(--font-body,system-ui,sans-serif)}
-.brand .mark{font-size:calc(var(--ui-size) * 1.25);width:32px;height:32px}
-.session-title,#sessions{font-size:calc(var(--ui-size) * 1.125)}
-.brand button,.session-bar button{font-size:var(--ui-size);min-width:28px;min-height:28px}
+.brand button,.session-bar button{font-family:var(--font-body)}
+.brand .mark{font-size:calc(var(--ui-text) * 1.25);width:32px;height:32px}
+.session-title,#sessions{font-size:calc(var(--ui-text) * 1.125)}
+.brand button,.session-bar button{font-size:var(--ui-text);min-width:28px;min-height:28px}
 .message-label,.message summary{font-size:var(--font-detail)}
 .message-time,.brand .subtitle,.status-line{font-size:var(--font-min)}
 .message pre,.message code{font-size:var(--font-detail)}
 .message pre code{font-size:inherit}
-#composer textarea,.route .model,#effort,.mode-select{font-size:var(--ui-size)}
+#composer textarea,.route .model,#effort,.mode-select{font-size:var(--ui-text)}
 
 /* ---- Resizable prompt -----------------------------------------------------------
  * The grab bar sits above the textarea and owns the drag: the textarea keeps resize:none so the
@@ -208,15 +241,16 @@ dialog,.approval-details{max-height:80vh;overflow:auto}
 /* ---- Model picker modal ---------------------------------------------------------
  * Two lists side by side (favorites, the provider's whole catalog) with the selected model's real
  * details beside them. It scrolls internally, so a 200-model provider list cannot grow the view. */
-#model-picker{width:min(820px,94vw);max-height:86vh;padding:0;border:1px solid var(--border);
+#model-picker{width:min(1080px,96vw);max-height:86vh;padding:0;border:1px solid var(--border);
  border-radius:10px;background:var(--vscode-editor-background,var(--panel));color:var(--fg);overflow:hidden}
 #model-picker::backdrop{background:rgba(0,0,0,.55)}
 .picker-head{display:flex;align-items:center;justify-content:space-between;gap:8px;
  padding:10px 14px;border-bottom:1px solid var(--border)}
 .picker-head h2{margin:0}
-.picker-body{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;
+.picker-body{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(300px,1fr);gap:18px;
  padding:12px 14px;overflow:auto;max-height:calc(86vh - 104px)}
 .picker-lists{min-width:0}
+.model-list:empty{display:none}
 .picker-columns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
 .picker-column{min-width:0;display:flex;flex-direction:column;gap:4px}
 .picker-column h3,.picker-details h3{margin:0;font-size:var(--font-detail);color:var(--muted);
@@ -227,17 +261,19 @@ dialog,.approval-details{max-height:80vh;overflow:auto}
 .model-list li:last-child{border-bottom:0}
 .model-list li.selected{box-shadow:inset 2px 0 0 var(--accent);background:rgba(127,127,127,.12)}
 .model-list li.caption{border:0;padding:8px;display:block;color:var(--muted);font-size:var(--font-min)}
-.model-row{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+.model-row{flex:1 1 auto;min-width:0;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;gap:1px;
  background:none;border:0;color:var(--fg);padding:5px 6px;text-align:left;border-radius:4px;cursor:pointer}
 .model-row:hover:not(:disabled){background:rgba(127,127,127,.14);filter:none}
-.model-name{font-size:var(--ui-size);overflow-wrap:anywhere}
-.model-meta{font-size:var(--font-min);color:var(--muted)}
-.star{flex:none;background:none;border:0;color:var(--muted);padding:2px 5px;font-size:var(--ui-size);line-height:1}
+.model-name{font-size:var(--ui-text);overflow-wrap:break-word}
+.model-meta{font-size:var(--font-detail);color:var(--muted)}
+.star{flex:none;background:none;border:0;color:var(--muted);padding:2px 5px;font-size:var(--ui-text);line-height:1}
 .star.filled{color:var(--accent)}
 .star:hover:not(:disabled){color:var(--accent-hover);filter:none;background:none}
 .picker-details{min-width:0;border-left:1px solid var(--border);padding-left:12px}
-#model-details{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin:8px 0 0;font-size:var(--font-detail)}
-#model-details dt{color:var(--muted);white-space:nowrap}
+#model-details{display:grid;grid-template-columns:minmax(0,1fr);gap:1px;margin:8px 0 0;
+ font-size:calc(var(--ui-text) * .95)}
+#model-details dt{color:var(--muted);font-size:var(--font-detail);text-transform:uppercase;letter-spacing:.4px;margin-top:7px}
+#model-details dt:first-child{margin-top:0}
 #model-details dd{margin:0;overflow-wrap:anywhere}
 .picker-actions{display:flex;align-items:center;gap:10px;justify-content:flex-end;
  padding:10px 14px;border-top:1px solid var(--border)}
@@ -253,4 +289,27 @@ dialog,.approval-details{max-height:80vh;overflow:auto}
 #features code{font-size:var(--font-detail)}
 
 @media(max-width:620px){.picker-body{grid-template-columns:minmax(0,1fr)}
+ .picker-columns{grid-template-columns:minmax(0,1fr)}
  .picker-details{border-left:0;border-top:1px solid var(--border);padding:10px 0 0}}
+
+/* ---- Reading column on wide windows ---------------------------------------------
+ * Public Pixel is ~2x wider per character than a sans face. Unconstrained, a 1920px window gave
+ * 1890px-wide message lines and 1000px Send/Stop cells, which reads as broken rather than large.
+ * Everything now wraps inside one centred column; narrow sidebars are unaffected. */
+:root{--ui-column:1000px}
+header.brand,.text-size-row,.tabs,.session-bar,.route,.status-line,.permissions,.section-title,#transcript,.warning{width:100%;max-width:var(--ui-column);margin-left:auto;margin-right:auto}
+#composer{width:calc(100% - 20px);max-width:calc(var(--ui-column) - 20px);margin-left:auto;margin-right:auto}
+#agents,#features{padding-left:max(16px,calc((100% - var(--ui-column)) / 2));padding-right:max(16px,calc((100% - var(--ui-column)) / 2))}
+
+/* Typography by role: the slider controls regular reading text, not control prominence. */
+:root{--ui-size:10px;--font-action:calc(var(--ui-text) * 1.4);--font-title:calc(var(--ui-text) * 1.6);--font-detail:var(--ui-text);--font-min:calc(var(--ui-text) * .85)}
+body{font-weight:400}
+button,select,option,label,output,h1,h2,h3,.brand strong,.brand .mark,.session-title,.model-name{font-weight:700}
+button,select,option,.route .model,#effort,.mode-select,#sessions,.brand button,.session-bar button,.model-name,.star{font-size:var(--font-action)}
+.brand strong,.brand .mark,.session-title,h1,h2,h3,.picker-column h3,.picker-details h3,.text-size-row label,.text-size-row output{font-size:var(--font-title)}
+textarea,input:not([type=range]):not([type=checkbox]),#composer textarea,.profile-card textarea,.message .body,.message pre,.message code{font-size:var(--ui-text);font-weight:400}
+.message .body strong,.message .body b{font-weight:400}
+.model-meta,.profile-path,.caption,.message-label,.message-time{font-weight:400}
+#model-details{font-size:var(--ui-text)}
+#model-details dt{font-weight:700}
+#model-details dd{font-weight:400}

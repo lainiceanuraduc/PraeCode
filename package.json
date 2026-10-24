@@ -2,7 +2,7 @@
   "name": "praecode",
   "displayName": "PraeCode - Hermes Agent",
   "description": "Hermes Agent workspace chat, model-aware thinking controls, and configurable worker agents.",
-  "version": "0.1.25",
+  "version": "0.1.29",
   "publisher": "lainiceanuraduc",
   "license": "MIT",
   "engines": {
@@ -177,10 +177,10 @@
         },
         "radcode.fontSize": {
           "type": "integer",
-          "default": 16,
-          "minimum": 10,
-          "maximum": 20,
-          "description": "Base font size in pixels for the PraeCode chat view."
+          "default": 10,
+          "minimum": 1,
+          "maximum": 30,
+          "description": "Base font size in pixels for the PraeCode chat view. Range 1–30. Controls and headings are larger and bold; conversation text is regular-weight."
         },
         "radcode.lineHeight": {
           "type": "number",
@@ -262,6 +262,7 @@
     "test:ui": "node scripts/ui-smoke.mjs",
     "test:live": "tsx scripts/live-smoke.ts",
     "test:worker": "tsx scripts/worker-smoke.ts",
+    "test:sessions": "tsx scripts/session-recovery-smoke.ts",
     "package": "npm run compile && vsce package --no-dependencies",
     "vscode:prepublish": "npm run compile",
     "publish": "vsce publish --no-dependencies"
