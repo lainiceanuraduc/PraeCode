@@ -2,13 +2,13 @@
 
 [![Version](https://img.shields.io/badge/version-0.1.24-e5b93c)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-e5b93c)](LICENSE)
-[![GitHub](https://img.shields.io/badge/source-GitHub-e5b93c)](https://github.com/lainiceanuraduc/RadCode)
+[![GitHub](https://img.shields.io/badge/source-GitHub-e5b93c)](https://github.com/lainiceanuraduc/PraeCode)
 
 A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.24.
 It talks to your existing Hermes installation over **ACP** (Agent Client Protocol) — no API keys are
 stored in VS Code, and no Hermes configuration is modified.
 
-![PraeCode chat view](https://raw.githubusercontent.com/lainiceanuraduc/RadCode/main/readme_image.png)
+![PraeCode chat view](https://raw.githubusercontent.com/lainiceanuraduc/PraeCode/main/readme_image.png)
 
 ## Disclosure: this was vibe-coded
 

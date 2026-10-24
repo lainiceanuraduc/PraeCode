@@ -306,12 +306,12 @@
   "icon": "media/icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lainiceanuraduc/RadCode.git"
+    "url": "https://github.com/lainiceanuraduc/PraeCode.git"
   },
   "bugs": {
-    "url": "https://github.com/lainiceanuraduc/RadCode/issues"
+    "url": "https://github.com/lainiceanuraduc/PraeCode/issues"
   },
-  "homepage": "https://github.com/lainiceanuraduc/RadCode#readme",
+  "homepage": "https://github.com/lainiceanuraduc/PraeCode#readme",
   "author": {
     "name": "Radu Lainiceanu",
     "email": "lainiceanu.radu.c@protonmail.com"
