@@ -101,11 +101,12 @@ The UI's display face (buttons, tabs, wordmark, session title — never message 
 provenance in `media/fonts/PublicPixel.LICENSE.txt`. CC0 permits redistribution inside a published
 extension.
 
-Before 0.1.24 that face was *Valve* by Typodermic Fonts, which ships under a **Desktop-only** EULA.
+Until 0.1.22 that face was *Valve* by Typodermic Fonts, which ships under a **Desktop-only** EULA.
 That agreement forbids embedding the font software in "an app, game, desktop application, plug-in,
-extension, mod, or other software", so shipping it inside a VSIX was a licence violation — corrected
-in 0.1.24 by removing those `.otf` files and the unused Pixelzone face. Versions 0.1.21 and 0.1.22
-still contain it; update to 0.1.24.
+extension, mod, or other software", so shipping it inside a VSIX was a licence violation. **0.1.23**
+removed those `.otf` files (and the unused Pixelzone face) and switched to Public Pixel; **0.1.24** is
+the rename to PraeCode. The 0.1.21 and 0.1.22 builds that contained Valve have been removed from the
+Marketplace, so no downloadable package carries it.
 
 ## Requirements
 
