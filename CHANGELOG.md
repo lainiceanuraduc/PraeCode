@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.30
+
+- **Status bar: four equal cells.** Spinner+state, approval mode, context meter and Compact each take
+  exactly a quarter of the row (`grid-auto-flow:column;grid-auto-columns:1fr`). Compact is no longer
+  nested inside the meter, so hiding the meter can never hide it.
+- A narrow quarter degrades instead of clipping mid-word: below 620px the meter shows its percentage
+  alone (window and message count stay in the tooltip), the select shrinks and ellipsizes, and Compact
+  ellipsizes rather than overflowing.
+
 ## 0.1.29
 
 - **Menu tabs are exactly one third each**, with centred labels and the active underline spanning the

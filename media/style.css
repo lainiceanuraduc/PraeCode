@@ -27,21 +27,25 @@ button{font-family:var(--font-body,system-ui,sans-serif)}
 .permission-summary{margin:0 0 8px;padding:8px;max-height:150px;overflow:auto;font-size:var(--font-min,13px);white-space:pre-wrap;overflow-wrap:anywhere;background:var(--bg);border:1px solid var(--border);border-radius:5px}
 .permission-card .actions{flex-wrap:wrap}
 .permission-card .danger{color:var(--vscode-errorForeground,#e06c75);border-color:var(--vscode-errorForeground,#e06c75)}
-.context-meter{display:flex;align-items:center;gap:6px;min-width:0;flex:1 1 auto;margin-left:auto;overflow:hidden}
-.context-meter #compact{flex:none}
+.context-meter{display:flex;align-items:center;gap:5px;min-width:0;width:100%;overflow:hidden}
+#context-text .context-rest{white-space:pre}
+.status-line #compact{width:100%;min-width:0}
 /* The approval select must never be the thing that gives way; the meter text ellipses first. */
-.status-line #mode{flex:0 0 auto}
+.status-line #mode{width:100%;max-width:none;min-width:0;padding:0 2px;text-overflow:ellipsis}
 .context-meter #context-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .context-meter #context-text{flex:0 1 auto;min-width:0}
-.status-line{flex-wrap:nowrap;row-gap:0;gap:6px;min-width:0;align-items:center}
-.status-line .context-meter{flex:1 1 auto;order:0}
-.status-line #status{flex:1 1 60px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ---- Status bar: four equal cells ------------------------------------------------
+ * Spinner+state, approval mode, context meter and Compact each take exactly a quarter of the row
+ * (`grid-auto-columns:1fr` keeps them equal even when one of them is hidden). */
+.status-line{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;min-width:0;align-items:center}
+.status-cell{display:flex;align-items:center;gap:5px;min-width:0}
+.status-line #status{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .thinking-label{flex:none}
 .mode-select{width:auto;max-width:132px;font-size:var(--font-min,13px);padding:2px 4px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--fg)}
 .mode-select:hover:not(:disabled){border-color:var(--focus,var(--highlight))}
 .mode-select:disabled{opacity:.6}
 .context-meter[hidden]{display:none}
-.meter{width:52px;height:5px;border-radius:3px;background:var(--border);overflow:hidden;flex:none}
+.meter{width:40px;height:5px;border-radius:3px;background:var(--border);overflow:hidden;flex:none}
 .meter span{display:block;height:100%;width:0;background:var(--focus,var(--highlight));transition:width .2s}
 .meter.warn span{background:var(--vscode-editorWarning-foreground,#e1b35e)}
 .meter.critical span{background:var(--vscode-errorForeground,#e06c75)}
@@ -133,7 +137,7 @@ body.compact .message{margin:9px 0}body.compact #composer textarea{min-height:52
  box-shadow:2px 2px 0 var(--border)}
 #send:hover:not(:disabled){background:var(--accent-hover);border-color:var(--accent-hover)}
 .composer-actions button:disabled,#compact:disabled{opacity:.42;box-shadow:none;transform:none}
-#compact{font-size:var(--font-detail);height:calc(var(--font-detail) * 1.9);padding:0 .5em}
+#compact{font-size:var(--font-detail);height:calc(var(--font-detail) * 1.9);padding:0 .3em;justify-self:stretch;overflow:hidden;text-overflow:ellipsis}
 
 /* ---- Text-size control (under the context meter) -------------------------------- */
 .text-size-row{display:flex;align-items:center;gap:8px;padding:0 12px 2px;color:var(--muted)}
@@ -313,3 +317,10 @@ textarea,input:not([type=range]):not([type=checkbox]),#composer textarea,.profil
 #model-details{font-size:var(--ui-text)}
 #model-details dt{font-weight:700}
 #model-details dd{font-weight:400}
+
+@media(max-width:620px){
+ /* A quarter of a narrow sidebar cannot hold the full meter sentence or "Don't Ask"; the tooltip
+  * keeps the numbers and the select keeps its value. */
+ .context-rest{display:none}
+ .status-line #mode{font-size:var(--font-detail)}
+}

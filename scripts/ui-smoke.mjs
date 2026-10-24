@@ -183,8 +183,15 @@ assert.equal(await page.evaluate(()=>parseFloat(getComputedStyle(document.body).
 await page.evaluate(()=>document.documentElement.style.setProperty('--ui-size','13px'));
 
  // Compact sits with the context meter; Stop is always on screen but only enabled mid-turn.
- assert.equal(await page.evaluate(()=>document.getElementById('compact').parentElement.id),'context-meter',
-  'Compact belongs beside the context meter');
+ // The status bar is four equal cells: spinner+state, approval mode, context meter, Compact.
+ const statusCells=await page.evaluate(()=>{
+  const row=document.querySelector('.status-line');
+  const total=row.getBoundingClientRect().width;
+  const cells=[...row.children].filter(el=>getComputedStyle(el).position!=='absolute'&&!el.hidden);
+  return {count:cells.length,widths:cells.map(el=>+(el.getBoundingClientRect().width/total*100).toFixed(1))};
+ });
+ assert.equal(statusCells.count,4,'four status cells');
+ for(const pct of statusCells.widths)assert.ok(Math.abs(pct-25)<2.5,`status cell is ${pct}% wide, expected ~25%`);
  const stopIdle=await page.evaluate(()=>({visible:document.getElementById('stop').getBoundingClientRect().width>0,
   disabled:document.getElementById('stop').disabled,text:document.getElementById('stop').textContent.trim(),
   send:document.getElementById('send').textContent.trim()}));

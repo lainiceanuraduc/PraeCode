@@ -216,7 +216,17 @@ export class RadCodeView {
   if(messages)parts.push(`${messages} msgs`);
   // Kept short: the status line is narrow, and truncation mid-word reads as a bug.
   if(usage?.compactions)parts.push(`${usage.compactions}× compacted`);
-  element('context-text').textContent=parts.join(' · ');
+  // The percentage always fits; the rest of the sentence hides in a narrow quarter (CSS).
+  // textContent stays the full sentence, so nothing that reads the meter has to change.
+  const head=parts[0];
+  const splitAt=head.indexOf(' of ');
+  const text=element('context-text');text.replaceChildren();
+  const pct=document.createElement('span');
+  pct.textContent=splitAt<0?head:head.slice(0,splitAt);
+  const rest=document.createElement('span');
+  rest.className='context-rest';
+  rest.textContent=(splitAt<0?'':head.slice(splitAt))+parts.slice(1).map(part=>` · ${part}`).join('');
+  text.append(pct,rest);
   bar.title=used!==null&&limit?`${used} of ${limit} context tokens used`:'Hermes did not report a context window for this model';
  }
  private async compact():Promise<void>{
