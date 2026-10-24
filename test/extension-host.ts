@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import assert from 'node:assert/strict';
 
 export async function run():Promise<void>{
- const extension=vscode.extensions.getExtension('radcode-local.radcode-hermes');
+ const extension=vscode.extensions.getExtension('lainiceanuraduc.radcode-hermes-agent');
  assert.ok(extension,'Development extension must be installed in the test host');
  const api=await extension.activate();
  const commands=await vscode.commands.getCommands(true);

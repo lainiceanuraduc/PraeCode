@@ -71,7 +71,7 @@ export class RadCodeExtension implements vscode.Disposable {
    'radcode.mcp':()=>this.openMcpSettings(),
    'radcode.attachSelection':()=>this.attachSelection(),
    'radcode.model':()=>this.openModelPicker(),
-   'radcode.settings':()=>vscode.commands.executeCommand('workbench.action.openSettings','@ext:radcode-local.radcode-hermes'),
+   'radcode.settings':()=>vscode.commands.executeCommand('workbench.action.openSettings','@ext:lainiceanuraduc.radcode-hermes-agent'),
    'radcode.logs':()=>this.output.show(true)
   };
   for(const [name,handler]of Object.entries(commands)){
