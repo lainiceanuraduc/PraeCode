@@ -42,10 +42,10 @@ isolation, credential vault.
   "effort" dropdown wired to `set_config_option` would therefore be decorative.
 - The real, fenced control is the gateway's `reasoning` session mutation
   (`gateway/session_mutation_policy.py::prepare_reasoning`), which freezes the level for the session
-  policy. RadCode uses that through `bridge/control.py`, then reads `session.info.reasoning_effort`
+  policy. PraeCode uses that through `bridge/control.py`, then reads `session.info.reasoning_effort`
   back. This is why the selector shows a confirmed value rather than an assumption.
 - Model switching goes through Hermes' guarded mutation; ACP surfaces it as a permission request,
-  which RadCode renders as a modal approval.
+  which PraeCode renders as a modal approval.
 
 ## 3. Effort ladders (verified in the installed tree + live probes 2026-10-23)
 

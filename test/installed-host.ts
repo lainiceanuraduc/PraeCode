@@ -5,7 +5,7 @@ import path from 'node:path';
 
 /** Runs against the PACKAGED VSIX installed in an isolated extensions dir. */
 export async function run():Promise<void>{
- const extension=vscode.extensions.getExtension('lainiceanuraduc.radcode-hermes-agent');
+ const extension=vscode.extensions.getExtension('lainiceanuraduc.praecode');
  assert.ok(extension,'Packaged extension must be installed');
  const api=await extension.activate();
  await vscode.commands.executeCommand('radcode.open');

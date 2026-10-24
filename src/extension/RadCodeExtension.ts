@@ -41,7 +41,7 @@ export class RadCodeExtension implements vscode.Disposable {
  private profile='';
 
  constructor(private readonly context:vscode.ExtensionContext){
-  this.output=vscode.window.createOutputChannel('RadCode Hermes');
+  this.output=vscode.window.createOutputChannel('PraeCode Hermes');
   this.presets=new PresetRepository(context.globalState);
   this.view=new ChatViewProvider(context.extensionUri);
   this.permissions=new PermissionBroker(this.view,()=>this.service?.sessions??[],
@@ -71,7 +71,7 @@ export class RadCodeExtension implements vscode.Disposable {
    'radcode.mcp':()=>this.openMcpSettings(),
    'radcode.attachSelection':()=>this.attachSelection(),
    'radcode.model':()=>this.openModelPicker(),
-   'radcode.settings':()=>vscode.commands.executeCommand('workbench.action.openSettings','@ext:lainiceanuraduc.radcode-hermes-agent'),
+   'radcode.settings':()=>vscode.commands.executeCommand('workbench.action.openSettings','@ext:lainiceanuraduc.praecode'),
    'radcode.logs':()=>this.output.show(true)
   };
   for(const [name,handler]of Object.entries(commands)){

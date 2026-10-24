@@ -1,4 +1,4 @@
-# RadCode — Hermes Agent for VS Code
+# PraeCode — Hermes Agent for VS Code
 
 [![Version](https://img.shields.io/badge/version-0.1.24-e5b93c)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-e5b93c)](LICENSE)
@@ -8,7 +8,7 @@ A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresea
 It talks to your existing Hermes installation over **ACP** (Agent Client Protocol) — no API keys are
 stored in VS Code, and no Hermes configuration is modified.
 
-![RadCode chat view](https://raw.githubusercontent.com/lainiceanuraduc/RadCode/main/readme_image.png)
+![PraeCode chat view](https://raw.githubusercontent.com/lainiceanuraduc/RadCode/main/readme_image.png)
 
 ## Disclosure: this was vibe-coded
 
@@ -40,11 +40,11 @@ one, it is — and bug reports are welcome.
 
 ## Install
 
-**From the Marketplace** — search for **RadCode Hermes** in the Extensions view, or:
+**From the Marketplace** — search for **PraeCode Hermes** in the Extensions view, or:
 
 ```bash
-code   --install-extension lainiceanuraduc.radcode-hermes-agent   # VS Code
-codium --install-extension lainiceanuraduc.radcode-hermes-agent   # VSCodium
+code   --install-extension lainiceanuraduc.praecode   # VS Code
+codium --install-extension lainiceanuraduc.praecode   # VSCodium
 ```
 
 **From a VSIX** — `npm run package`, then *Extensions → … → Install from VSIX*.
@@ -92,7 +92,7 @@ Extension Development Host.
 | Context | Files attached to a message: the editor you are looking at is offered as a one-click chip, `＋ Context` picks more from the workspace, each chip opens or removes the file. The editor host reads the bytes at send time, so you always send the current file; the transcript shows names, not file bodies. Workspace-trust enforcement |
 | Appearance | `radcode.accent` picks the highlight colour (yellow default, 8 palettes), `radcode.fontFamily`/`fontSize`/`lineHeight`/`compact` restyle the view. Changes apply live |
 | Profile | "Features" tab reads the profile on disk: `SOUL.md`, `memories/USER.md`, `memories/MEMORY.md`, each editable with an explicit Save |
-| Diagnostics | "RadCode Hermes" output channel with secret redaction |
+| Diagnostics | "PraeCode Hermes" output channel with secret redaction |
 
 ## Bundled font, and why it changed
 
@@ -120,7 +120,7 @@ still contain it; update to 0.1.24.
 | `radcode.hermesPath` | `hermes` | Hermes executable. Auto-detects `~/.local/bin/hermes` when left as `hermes`. |
 | `radcode.hermesHome` | *(empty)* | Absolute `HERMES_HOME` to pin a specific Hermes profile. |
 | `radcode.pythonPath` | *(empty)* | Hermes' own Python interpreter for model-aware effort controls. Only needed if `hermes --print-runtime-command` is unavailable. Never point this at an unrelated system Python. |
-| `radcode.maxParallelAgents` | `2` | How many RadCode worker sessions may run at once. |
+| `radcode.maxParallelAgents` | `2` | How many PraeCode worker sessions may run at once. |
 | `radcode.accent` | `yellow` | Highlight colour: yellow, amber, orange, lime, teal, violet, magenta, blue. Drives focus rings, links, active tab, composer and attachment chips. Light editor themes automatically get a darkened text variant. |
 | `radcode.fontFamily` | `editor` | `editor` (inherit), `system`, `monospace`, `serif`, or `custom` with `radcode.fontFamilyCustom`. |
 | `radcode.fontSize` | `16` | Base size in px (10–20). Tabs, wordmark, logo and the text-size control sit 20% above it; metadata keeps a 13px floor. |
@@ -130,7 +130,7 @@ still contain it; update to 0.1.24.
 ## How thinking/effort works
 
 Hermes defines a wide canonical ladder (`none, minimal, low, medium, high, xhigh, max`), but each
-provider/model accepts a different subset. RadCode:
+provider/model accepts a different subset. PraeCode:
 
 1. asks the installed Hermes (`bridge/control.py`) for the **actual** supported levels for the active
    provider/model (Codex uses per-generation ladders; Anthropic maps levels to thinking budgets);
@@ -138,12 +138,12 @@ provider/model accepts a different subset. RadCode:
 3. applies the change through Hermes' own fenced `reasoning` session mutation;
 4. **reads the value back** from `session.info` and fails loudly if it did not land.
 
-A model whose capabilities are unknown gets an empty list and a note — RadCode never offers
+A model whose capabilities are unknown gets an empty list and a note — PraeCode never offers
 speculative levels that would 400 at the provider.
 
 ## Provider compatibility
 
-RadCode never invents an effort level: it asks Hermes, which owns the per-provider truth. These are
+PraeCode never invents an effort level: it asks Hermes, which owns the per-provider truth. These are
 the routes the installed agent actually answers (verified 2026-10-23 against hermes-agent `0.22.3`).
 
 | Route | Ladder offered | Where it comes from |
@@ -245,7 +245,7 @@ npm test              # unit tests (transport, ACP, presets, sessions, control)
 npm run test:python   # Hermes-side helper tests (needs Hermes' Python)
 npm run test:ui       # Playwright: rendering, CSP, sanitization, capability select, a11y labels
 npm run test:live     # real ACP handshake + session + effort read-back
-npm run package       # produces radcode-hermes-agent-0.1.24.vsix
+npm run package       # produces praecode-0.1.24.vsix
 ```
 
 The extension-host test (`test/extension-host.ts`) is run in a real editor:
@@ -270,7 +270,7 @@ codium --extensionDevelopmentPath="$PWD" --extensionTestsPath="$PWD/out/extensio
 ## Security notes
 
 - Commands run with the editor's environment; workspace trust is required.
-- Secrets stay in Hermes (`~/.hermes/.env`); RadCode never writes credentials.
+- Secrets stay in Hermes (`~/.hermes/.env`); PraeCode never writes credentials.
 - The webview is CSP-locked (`default-src 'none'`), renders sanitized Markdown with DOMPurify, and
   only sends typed messages to the extension host.
 - The webview never holds file contents and cannot choose what is read: it names a path, the host

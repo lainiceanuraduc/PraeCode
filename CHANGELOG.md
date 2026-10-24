@@ -2,12 +2,12 @@
 
 ## 0.1.24
 
-- **Extension name is now `radcode-hermes-agent`** (id `lainiceanuraduc.radcode-hermes-agent`). The old
-  name `radcode-hermes` is held by a deleted listing and Microsoft will not release it, so the
-  Marketplace refuses any package using it. Everything user-facing is unchanged: display name, icon,
-  commands, `radcode.*` settings and behaviour.
-- **This renames the extension id**, which means a new listing: installs of the old id do not
-  auto-update. Install `lainiceanuraduc.radcode-hermes-agent` (the previous listing no longer exists).
+- **The project is now branded `PraeCode`**, published as `lainiceanuraduc.praecode`, display name
+  "PraeCode - Hermes Agent". Microsoft keeps the deleted listing's slug (`radcode-hermes`) *and* its
+  display name (`RadCode — Hermes Agent`) reserved and refuses any package reusing either, so the
+  name had to change rather than the version. The brand also avoids the unrelated `radcode.co`
+  software agency. Commands, `radcode.*` setting ids, icon and behaviour are unchanged; the palette
+  titles, output channel, view container and the README now say PraeCode.
 - Fixed the settings command opening `@ext:radcode-local.radcode-hermes`, a publisher id that never
   matched this extension; it now targets the real one.
 - No functional changes: 0.1.24 is 0.1.23 (model picker, resizable prompt, profile editor, CC0 font)

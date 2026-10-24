@@ -33,7 +33,7 @@ Everything below is already prepared in `package.json`: `publisher`, `icon`, `re
 export PATH=/data/usr/bin:$PATH      # this machine: node is not on PATH
 npm run compile
 npm test && npm run test:ui
-npm run package                       # → radcode-hermes-agent-<version>.vsix
+npm run package                       # → praecode-<version>.vsix
 ```
 
 Install the VSIX once by hand and click through it before a first public release — the Marketplace
@@ -53,10 +53,11 @@ VSCE_PAT=<token> npm run publish
 ```
 
 Listing appears at
-<https://marketplace.visualstudio.com/items?itemName=lainiceanuraduc.radcode-hermes-agent>
-and the install id is `lainiceanuraduc.radcode-hermes-agent`.  The name `radcode-hermes` is reserved
-by a deleted listing and cannot be reused, so the id carries the `-agent` suffix. Renaming the id
-means a **new** listing: existing installs of the old id do not auto-update.
+<https://marketplace.visualstudio.com/items?itemName=lainiceanuraduc.praecode>
+and the install id is `lainiceanuraduc.praecode`.  The slugs `radcode-hermes` and `radcode-hermes-agent`
+are held by a deleted listing that Microsoft will not release, and the display name `RadCode — Hermes
+Agent` stays reserved too, so the project is branded **PraeCode**. A new id means a **new** listing:
+installs of the old id do not auto-update.
 
 Publish a specific increment with `npx vsce publish minor` (or `patch`, `major`) — it bumps
 `package.json`, commits and tags for you.
@@ -65,7 +66,7 @@ Publish a specific increment with `npx vsce publish minor` (or `patch`, `major`)
 
 ```bash
 npx ovsx create-namespace lainiceanuraduc   # one time, needs an Eclipse account token
-npx ovsx publish radcode-hermes-agent-<version>.vsix -p <openvsx-token>
+npx ovsx publish praecode-<version>.vsix -p <openvsx-token>
 ```
 
 Open VSX namespaces are separate from Marketplace publisher ids, even when they read the same.

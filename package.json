@@ -1,6 +1,6 @@
 {
-  "name": "radcode-hermes-agent",
-  "displayName": "RadCode \u2014 Hermes Agent",
+  "name": "praecode",
+  "displayName": "PraeCode - Hermes Agent",
   "description": "Hermes Agent workspace chat, model-aware thinking controls, and configurable worker agents.",
   "version": "0.1.24",
   "publisher": "lainiceanuraduc",
@@ -27,7 +27,7 @@
     "commands": [
       {
         "command": "radcode.open",
-        "title": "Hermes: Open RadCode"
+        "title": "Hermes: Open PraeCode"
       },
       {
         "command": "radcode.newSession",
@@ -87,7 +87,7 @@
           "type": "webview",
           "id": "radcode.chat",
           "name": "Hermes Agent",
-          "contextualTitle": "RadCode"
+          "contextualTitle": "PraeCode"
         }
       ]
     },
@@ -123,7 +123,7 @@
       ]
     },
     "configuration": {
-      "title": "RadCode Hermes",
+      "title": "PraeCode Hermes",
       "properties": {
         "radcode.hermesPath": {
           "type": "string",
@@ -148,7 +148,7 @@
           "default": 2,
           "minimum": 1,
           "maximum": 8,
-          "description": "Maximum simultaneously running RadCode worker sessions. Does not change Hermes native delegation limits."
+          "description": "Maximum simultaneously running PraeCode worker sessions. Does not change Hermes native delegation limits."
         },
         "radcode.accent": {
           "type": "string",
@@ -192,7 +192,7 @@
             "Use radcode.fontFamilyCustom"
           ],
           "default": "editor",
-          "description": "Font family for the RadCode chat view."
+          "description": "Font family for the PraeCode chat view."
         },
         "radcode.fontFamilyCustom": {
           "type": "string",
@@ -204,7 +204,7 @@
           "default": 16,
           "minimum": 10,
           "maximum": 20,
-          "description": "Base font size in pixels for the RadCode chat view."
+          "description": "Base font size in pixels for the PraeCode chat view."
         },
         "radcode.lineHeight": {
           "type": "number",
