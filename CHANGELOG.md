@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.23
+
+- **Removed the bundled Valve font (licence fix).** `Valve-Bold.otf`/`Valve-BoldItalic.otf` are
+  Typodermic Fonts software under a Desktop EULA whose §4 explicitly forbids use in "an app, game,
+  desktop application, plug-in, extension, mod, or other software" and forbids distributing the font
+  files. Shipping them inside the VSIX was a licence violation, so they no longer ship.
+- **The display face is now Public Pixel by GGBotNet (CC0 1.0, public domain)**, which permits
+  redistribution in a published extension. It styles buttons, tabs, the HERMES wordmark and the
+  session title — message text, prompts and replies keep following `radcode.fontFamily`.
+- Dropped the unused Pixelzone files (CC0, unreferenced since the 0.1.20 type-scale change); the
+  extension is ~360 KB smaller.
+- Added `media/fonts/PublicPixel.LICENSE.txt` and a README section recording provenance, so the
+  licence situation of every bundled binary is stated rather than assumed.
+
 ## 0.1.22
 
 - Model button opens a picker modal: a Favorites list persisted by the extension and, per provider,

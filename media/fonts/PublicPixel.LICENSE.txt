@@ -1,0 +1,14 @@
+Public Pixel — by GGBotNet (https://www.ggbot.net, https://ggbot.itch.io/public-pixel-font)
+
+License: Creative Commons Zero v1.0 Universal (CC0 1.0) — public domain.
+The author states: "This font are licensed under the Creative Commons Zero v1.0 Universal. You can
+use them freely in your products & projects - print or digital, commercial or otherwise."
+
+Obtained from https://www.fontspace.com/public-pixel-font-f72305 (PublicPixel-rv0pA.ttf).
+
+CC0 imposes no attribution requirement; this file exists so the provenance of the bundled binary is
+recorded next to it. The previous bundled face ("Valve", Typodermic Fonts Inc., Ray Larabie) was
+removed in 0.1.23 because its Desktop EULA forbids embedding the font software in an app, plug-in or
+extension.
+
+Pixelzone (removed in 0.1.23, CC0 / public domain) was unused after the 0.1.20 type-scale change.

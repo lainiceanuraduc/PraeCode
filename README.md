@@ -1,10 +1,10 @@
 # RadCode — Hermes Agent for VS Code
 
-[![Version](https://img.shields.io/badge/version-0.1.22-e5b93c)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.23-e5b93c)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-e5b93c)](LICENSE)
 [![GitHub](https://img.shields.io/badge/source-GitHub-e5b93c)](https://github.com/lainiceanuraduc/RadCode)
 
-A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.22.
+A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.23.
 It talks to your existing Hermes installation over **ACP** (Agent Client Protocol) — no API keys are
 stored in VS Code, and no Hermes configuration is modified.
 
@@ -57,7 +57,7 @@ Extension Development Host.
 > missing.
 
 
-## What's new in 0.1.22
+## What's new in 0.1.23
 
 - **Model picker modal.** The model button opens a dialog with two lists: **Favorites** (kept by the
   extension in VS Code global state) and **All models** for the selected provider. Star a model to
@@ -93,6 +93,19 @@ Extension Development Host.
 | Appearance | `radcode.accent` picks the highlight colour (yellow default, 8 palettes), `radcode.fontFamily`/`fontSize`/`lineHeight`/`compact` restyle the view. Changes apply live |
 | Profile | "Features" tab reads the profile on disk: `SOUL.md`, `memories/USER.md`, `memories/MEMORY.md`, each editable with an explicit Save |
 | Diagnostics | "RadCode Hermes" output channel with secret redaction |
+
+## Bundled font, and why it changed
+
+The UI's display face (buttons, tabs, wordmark, session title — never message text) is
+**Public Pixel** by GGBotNet, licensed **CC0 1.0 (public domain)**: `media/fonts/PublicPixel.ttf`, with
+provenance in `media/fonts/PublicPixel.LICENSE.txt`. CC0 permits redistribution inside a published
+extension.
+
+Before 0.1.23 that face was *Valve* by Typodermic Fonts, which ships under a **Desktop-only** EULA.
+That agreement forbids embedding the font software in "an app, game, desktop application, plug-in,
+extension, mod, or other software", so shipping it inside a VSIX was a licence violation — corrected
+in 0.1.23 by removing those `.otf` files and the unused Pixelzone face. Versions 0.1.21 and 0.1.22
+still contain it; update to 0.1.23.
 
 ## Requirements
 
@@ -232,7 +245,7 @@ npm test              # unit tests (transport, ACP, presets, sessions, control)
 npm run test:python   # Hermes-side helper tests (needs Hermes' Python)
 npm run test:ui       # Playwright: rendering, CSP, sanitization, capability select, a11y labels
 npm run test:live     # real ACP handshake + session + effort read-back
-npm run package       # produces radcode-hermes-0.1.22.vsix
+npm run package       # produces radcode-hermes-0.1.23.vsix
 ```
 
 The extension-host test (`test/extension-host.ts`) is run in a real editor:

@@ -156,13 +156,13 @@ try{
   const measured=await page.evaluate(base=>{
    document.documentElement.style.setProperty('--ui-size',`${base}px`);
    const px=s=>parseFloat(getComputedStyle(document.querySelector(s)).fontSize);
-   return {tab:px('.tabs button'),mark:px('.brand .mark'),session:px('#sessions'),send:px('#send'),family:getComputedStyle(document.querySelector('.tabs button')).fontFamily};
+   return {tab:px('.tabs button'),mark:px('.brand .mark'),session:px('#sessions'),send:px('#send'),family:getComputedStyle(document.querySelector('.brand strong')).fontFamily};
   },base);
   assert.ok(Math.abs(measured.tab-base*1.2)<.01);
   assert.equal(measured.mark,base*1.25);
   assert.equal(measured.session,base*1.125);
   assert.equal(measured.send,base);
-  assert.match(measured.family,/Valve/);
+  assert.match(measured.family,/Public Pixel/,'the wordmark keeps the bundled CC0 display face');
  }
  await page.evaluate(()=>document.documentElement.style.setProperty('--ui-size','13px'));
 
