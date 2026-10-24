@@ -91,6 +91,15 @@ in the view header, so check it before shipping.
 
 ## Font licences
 
-Pixelzone and Valve ship in `media/fonts/` under their own licences from 1001fonts. The `.zip`
-downloads are excluded, but if the fonts' terms require attribution, state it in the README before
-publishing — the Marketplace listing distributes those files.
+Only one font ships: `media/fonts/PublicPixel.ttf`, by GGBotNet, **CC0 1.0 (public domain)** —
+redistribution inside a published extension is permitted, and provenance is recorded in
+`media/fonts/PublicPixel.LICENSE.txt`.
+
+This section used to say "Pixelzone and Valve ship under their own licences from 1001fonts". That was
+wrong in the way that matters: the host site labelled Valve "free for commercial use", but the package
+delivered a **Desktop EULA** whose §4 forbids use in "an app, game, desktop application, plug-in,
+extension, mod, or other software". Shipping it inside the VSIX (0.1.21, 0.1.22) was a licence
+violation; it was removed in 0.1.23 and purged from git history.
+
+Before bundling any binary, read the licence file that arrives **inside the download** — not the badge
+on the page it came from — and check it against distribution, not just use.
