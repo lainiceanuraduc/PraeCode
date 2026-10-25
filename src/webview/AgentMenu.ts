@@ -1,12 +1,15 @@
 import {element} from './dom';
 import type {AgentPreset} from '../domain/PresetRepository';
 import type {ViewState} from './types';
+import {delegationHeadline,describeAge,describeDuration,policyChips,runState} from '../domain/Delegation';
+import type {DelegationRun,DelegationSnapshot} from '../domain/Delegation';
 
 export class AgentMenu {
  constructor(private post:(message:any)=>void) {
   element('new-preset').onclick=()=>this.edit();
   element('cancel-preset').onclick=()=>{element('preset-form').hidden=true;};
   element('check-effort').onclick=()=>this.checkCapabilities();
+  element('refresh-subagents').onclick=()=>{element('delegation-headline').textContent='Refreshing…';this.post({type:'subagents'});};
   element('preset-provider').onchange=()=>this.resetEffort();element('preset-model').onchange=()=>this.resetEffort();
   element('preset-form').onsubmit=e=>{
    e.preventDefault();
@@ -14,6 +17,53 @@ export class AgentMenu {
    this.post({type:'savePreset',preset:{id:value('preset-id')||undefined,name:value('preset-name'),provider:value('preset-provider'),model:value('preset-model'),effort:value('preset-effort'),instructions:value('preset-instructions')}});
   };
  }
+ /**
+  * Hermes' own delegation state: the policy that governs child runs, then what is live and what
+  * finished. Only facts the bridge reported are shown; a missing field reads as unknown, never as a
+  * guessed default.
+  */
+ delegation(snapshot:DelegationSnapshot&{error?:string}):void{
+  const state:DelegationSnapshot={policy:snapshot.policy,running:snapshot.running??[],recent:snapshot.recent??[]};
+  element('delegation-headline').textContent=snapshot.error
+   ?`Delegation status unavailable: ${snapshot.error}`
+   :delegationHeadline(state);
+  const chips=element('delegation-policy');chips.replaceChildren();
+  for(const chip of policyChips(state.policy)){
+   const span=document.createElement('span');span.className='policy-chip';
+   const label=document.createElement('span');label.className='policy-label';label.textContent=chip.label;
+   const value=document.createElement('span');value.className='policy-value';value.textContent=chip.value;
+   span.append(label,value);chips.append(span);
+  }
+  chips.hidden=!chips.children.length;
+  this.runs('delegation-running',state.running,'No child run is active right now.');
+  this.runs('delegation-recent',state.recent,'Hermes recorded no finished child runs for this workspace.');
+ }
+
+ /** One card per child run, with the numbers Hermes stored: model, messages, tools, duration. */
+ private runs(host:string,runs:DelegationRun[],empty:string):void{
+  const mount=element(host);mount.replaceChildren();
+  if(!runs.length){const p=document.createElement('p');p.className='caption';p.textContent=empty;mount.append(p);return;}
+  const now=Date.now()/1000;
+  for(const run of runs){
+   const state=runState(run);
+   const card=document.createElement('div');card.className='run-card';
+   const title=document.createElement('h2');title.textContent=run.title;
+   const status=document.createElement('p');status.className=`caption delegation-status ${state}`;
+   const parts:string[]=[state];
+   if(run.model)parts.push(run.model);
+   parts.push(`from “${run.parentTitle}”`);
+   const detail:string[]=[];
+   if(run.messages)detail.push(`${run.messages} msgs`);
+   if(run.tools)detail.push(`${run.tools} tools`);
+   if(run.endedAt&&run.startedAt)detail.push(describeDuration(run.endedAt-run.startedAt));
+   else if(run.startedAt)detail.push(`started ${describeAge(now,run.startedAt)}`);
+   if(detail.length)parts.push(detail.join(' · '));
+   if(state!=='running'&&run.lastActivityAt)parts.push(`last activity ${describeAge(now,run.lastActivityAt)}`);
+   status.textContent=parts.join(' — ');
+   card.append(title,status);mount.append(card);
+  }
+ }
+
  private resetEffort():void {this.options([],'default');element('preset-note').textContent='Check supported levels after choosing provider and model.';}
  private checkCapabilities():void {
   const provider=element<HTMLInputElement>('preset-provider').value,model=element<HTMLInputElement>('preset-model').value;

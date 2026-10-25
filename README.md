@@ -1,10 +1,10 @@
 # PraeCode — Hermes Agent for VS Code
 
-[![Version](https://img.shields.io/badge/version-0.1.30-e5b93c)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.31-e5b93c)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-e5b93c)](LICENSE)
 [![GitHub](https://img.shields.io/badge/source-GitHub-e5b93c)](https://github.com/lainiceanuraduc/PraeCode)
 
-A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.30.
+A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.31.
 It talks to your existing Hermes installation over **ACP** (Agent Client Protocol) — no API keys are
 stored in VS Code, and no Hermes configuration is modified.
 
@@ -56,6 +56,21 @@ Extension Development Host.
 > `hermes acp --check` prints `Hermes ACP check OK`; the view still renders and tells you what is
 > missing.
 
+
+## What's new in 0.1.31
+
+- **Subagents shows delegation, not just presets.** The tab reads Hermes' own `delegate_task` policy
+  (concurrent children, spawn depth, child timeout, orchestrator, child model) and lists every active
+  child run plus recent finished ones — model, message/tool counts, duration and the conversation each
+  was delegated from.
+
+## What was new in 0.1.28 – 0.1.30
+
+- Composer actions became keycap buttons (one shape, hard shadow, press state; Send filled, Stop a
+  warning outline); compact follows the same language.
+- Menu tabs are exactly one third each, at 1.5× the reading size.
+- The status line is four equal cells: spinner+state, approval mode, context meter, Compact. Compact
+  is no longer nested in the meter, and a narrow quarter shows the meter's percentage only.
 
 ## What's new in 0.1.27
 
@@ -114,7 +129,7 @@ Extension Development Host.
 | Thinking / effort | Model-aware selector from **None / Off** to **max**, populated from Hermes' own provider policy and read back after applying. Every Ollama Cloud model (e.g. `deepseek-v4.1-flash:1017`) gets `none/low/medium/high/max`, Mistral-hosted ones `none/low/medium/high`; the Mistral API has `none/high` |
 | Model | A picker modal with per-provider **All models** and a persistent **Favorites** list (star to add, star again to remove), plus live per-model details: provider, lab, context window and effort ladder. Guarded Hermes model switches surface as approval prompts. "Other…" still accepts a manual provider/model id |
 | Prompt | The composer is resizable from a grab bar above it (drag, or arrow keys) and keeps its height between reloads |
-| Subagents | Named worker presets (provider, model, effort, instructions), isolated sessions per run, parallel-run cap, "Use result" into the main chat |
+| Subagents | Everything delegation touches: Hermes' own `delegate_task` policy (concurrent children, spawn depth, child timeout, orchestrator, child model), every active child run and its recent history read from Hermes' database, plus this extension's named worker presets (provider, model, effort, instructions), isolated sessions per run, parallel-run cap and "Use result" into the main chat |
 | Context | Files attached to a message: the editor you are looking at is offered as a one-click chip, `＋ Context` picks more from the workspace, each chip opens or removes the file. The editor host reads the bytes at send time, so you always send the current file; the transcript shows names, not file bodies. Workspace-trust enforcement |
 | Appearance | `radcode.accent` picks the highlight colour (yellow default, 8 palettes), `radcode.fontSize`/`lineHeight`/`compact` restyle the view. All text uses Public Pixel. Changes apply live |
 | Profile | "Features" tab reads the profile on disk: `SOUL.md`, `memories/USER.md`, `memories/MEMORY.md`, each editable with an explicit Save |
@@ -273,7 +288,7 @@ npm test              # unit tests (transport, ACP, presets, sessions, control)
 npm run test:python   # Hermes-side helper tests (needs Hermes' Python)
 npm run test:ui       # Playwright: rendering, CSP, sanitization, capability select, a11y labels
 npm run test:live     # real ACP handshake + session + effort read-back
-npm run package       # produces praecode-0.1.30.vsix
+npm run package       # produces praecode-0.1.31.vsix
 ```
 
 The extension-host test (`test/extension-host.ts`) is run in a real editor:

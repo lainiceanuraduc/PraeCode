@@ -324,3 +324,15 @@ textarea,input:not([type=range]):not([type=checkbox]),#composer textarea,.profil
  .context-rest{display:none}
  .status-line #mode{font-size:var(--font-detail)}
 }
+
+/* ---- Delegation panel (Subagents tab) -------------------------------------------
+ * Policy chips are facts, not controls: label above value, muted and compact, so the two run lists
+ * stay the focus of the tab. */
+.policy-chips{display:flex;flex-wrap:wrap;gap:4px 6px;margin:2px 0 12px}
+.policy-chip{display:inline-flex;align-items:baseline;gap:5px;padding:2px 7px;border:1px solid var(--border);
+ border-left:2px solid var(--accent);border-radius:3px;background:var(--panel);white-space:nowrap}
+.policy-label{font-size:var(--font-min);color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+.policy-value{font-size:var(--font-detail);font-weight:700}
+.delegation-status.running{color:var(--accent)}
+.delegation-status.failed{color:var(--vscode-errorForeground,#e06c75)}
+.delegation-status.cancelled{color:var(--muted)}

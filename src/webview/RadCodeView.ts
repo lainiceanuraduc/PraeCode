@@ -133,6 +133,8 @@ export class RadCodeView {
   for(const section of ['chat','agents','features']){element(section).hidden=section!==name;const b=element('tab-'+section);b.setAttribute('aria-selected',String(section===name));b.tabIndex=section===name?0:-1;}
   // The profile is read when the tab is opened, not on every state push: it is disk content, not state.
   if(name==='features')this.post({type:'profile'});
+  // Delegation state is read from Hermes' database when the tab opens, and on demand from Refresh.
+  if(name==='agents')this.post({type:'subagents'});
  }
  private send():void{
   const input=element<HTMLTextAreaElement>('message');const active=this.state.sessions.find(s=>s.id===this.state.activeId);
@@ -184,6 +186,7 @@ export class RadCodeView {
   else if(message.type==='favorites')this.picker.setFavorites(message.ids);
   else if(message.type==='modelDetails')this.picker.setDetails(message.details);
   else if(message.type==='profile'){this.features.setFiles(message.files);element('profile-home').textContent=message.home??'HERMES_HOME';}
+  else if(message.type==='subagents')this.agents.delegation(message);
   else if(message.type==='profileSaved')this.features.saved(message.id,message.savedAt);
   else if(message.type==='presetSaved')this.agents.saved();
   else if(message.type==='catalog')this.agents.capabilities(message.values,message.note,message.provider,message.model);

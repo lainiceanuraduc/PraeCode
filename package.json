@@ -2,7 +2,7 @@
   "name": "praecode",
   "displayName": "PraeCode - Hermes Agent",
   "description": "Hermes Agent workspace chat, model-aware thinking controls, and configurable worker agents.",
-  "version": "0.1.30",
+  "version": "0.1.31",
   "publisher": "lainiceanuraduc",
   "license": "MIT",
   "engines": {
@@ -263,6 +263,7 @@
     "test:live": "tsx scripts/live-smoke.ts",
     "test:worker": "tsx scripts/worker-smoke.ts",
     "test:sessions": "tsx scripts/session-recovery-smoke.ts",
+    "test:subagents": "tsx scripts/delegation-smoke.ts",
     "package": "npm run compile && vsce package --no-dependencies",
     "vscode:prepublish": "npm run compile",
     "publish": "vsce publish --no-dependencies"

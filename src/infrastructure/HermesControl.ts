@@ -24,6 +24,8 @@ export interface SessionControl {
  capabilities(provider: string, model: string, baseUrl?: string): Promise<EffortCapabilities>;
 /** Conversations Hermes persists for this workspace; the editor keeps no transcript of its own. */
  sessions(cwd: string): Promise<{id:string;title:string;cwd:string;messages:number;updatedAt:string}[]>;
+ /** Delegation policy plus every persisted child run Hermes knows about for this workspace. */
+ subagents(cwd: string): Promise<import('../domain/Delegation').DelegationSnapshot>;
  /** Facts about a model the session is not running on yet: lab, context window, effort ladder. */
  modelInfo(provider: string, model: string, baseUrl?: string): Promise<ModelDetails>;
 }
@@ -38,6 +40,7 @@ export class HermesControl implements SessionControl {
  compact(sessionId: string, focus = ''): Promise<{sessionId:string;compressed:boolean;messages?:number;summary?:string}> { return this.invoke({action:'compact',sessionId,focus}); }
  capabilities(provider: string, model: string, baseUrl = ''): Promise<EffortCapabilities> { return this.invoke({action:'catalog',provider,model,baseUrl}); }
  modelInfo(provider: string, model: string, baseUrl = ''): Promise<ModelDetails> { return this.invoke({action:'modelinfo',provider,model,baseUrl}); }
+ subagents(cwd: string): Promise<import('../domain/Delegation').DelegationSnapshot> { return this.invoke({action:'subagents',cwd}); }
  sessions(cwd: string): Promise<{id:string;title:string;cwd:string;messages:number;updatedAt:string}[]> { return this.invoke({action:'sessions',cwd}); }
  private async command(): Promise<string[]> {
   if(this.python) return [this.python,this.script];

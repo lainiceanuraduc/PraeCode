@@ -83,6 +83,26 @@ try{
  await page.getByLabel('Instructions').fill('Read only. Report bugs.');
  await page.getByRole('button',{name:'Save preset',exact:true}).click();
  assert.equal(await page.evaluate(()=>window.sent.at(-1).type),'savePreset');
+// The tab also reports what Hermes itself is delegating: policy, live children, finished runs.
+const nowSec=Date.now()/1000;
+await page.evaluate(now=>window.postMessage({type:'subagents',
+ policy:{backend:'default',model:'zai-glm-5-3',provider:'mistral',maxConcurrent:10,maxDepth:1,
+         childTimeoutSeconds:0,orchestrator:true,oneshotMaxChildren:2},
+ running:[{id:'r1',title:'Subagent: fix clone navigation',parentTitle:'Wave Pulse',model:'gpt-6-astra',
+           messages:12,tools:7,startedAt:now-90,lastActivityAt:now,endedAt:null,endReason:''}],
+ recent:[{id:'r2',title:'Subagent: Blender textures',parentTitle:'Wave Pulse',model:'mistral-large-4',
+          messages:62,tools:34,startedAt:now-900,lastActivityAt:now-400,endedAt:now-390,endReason:'agent_close'}]},'*'),nowSec);
+await page.locator('#delegation-running .run-card').first().waitFor();
+assert.match(await page.locator('#delegation-headline').textContent(),/1 child run active now · Hermes allows 10 at once/);
+assert.ok(await page.locator('#delegation-policy .policy-chip').count()>=6,'policy chips describe the delegation limits');
+assert.match(await page.locator('#delegation-running .run-card').first().textContent(),/running/);
+assert.match(await page.locator('#delegation-running .run-card').first().textContent(),/12 msgs · 7 tools/);
+assert.match(await page.locator('#delegation-recent .run-card').first().textContent(),/done/);
+assert.match(await page.locator('#delegation-recent .run-card').first().textContent(),/62 msgs · 34 tools/);
+await page.evaluate(()=>{document.getElementById('agents').scrollTop=0;});
+await page.locator('#agents').screenshot({path:'docs/_subagents.png'});
+await page.locator('#refresh-subagents').click();
+assert.equal(await page.evaluate(()=>window.sent.at(-1).type),'subagents','Refresh asks Hermes again');
  await page.getByRole('tab',{name:'Chat',exact:true}).click();
  await page.getByLabel('Message Hermes').fill('Hello from keyboard');
  await page.getByLabel('Message Hermes').press('Control+Enter');
@@ -331,5 +351,5 @@ await page.screenshot({path:'docs/ui-dark.png',fullPage:true});
  await page.addStyleTag({url:'http://radcode.test/theme.css'});
  await page.screenshot({path:'docs/ui-light.png',fullPage:true});
  assert.deepEqual(errors,[]);
- console.log('Webview smoke passed: connect, capability-aware effort, sanitized Markdown, agent form, keyboard send, approval mode select, approval cards, context meter, context attachments, composer clearing, accent + font settings, bold control/regular message hierarchy, image thumbnails decode, dark/light rendering.');
+ console.log('Webview smoke passed: connect, capability-aware effort, sanitized Markdown, agent form, keyboard send, approval mode select, approval cards, context meter, context attachments, composer clearing, accent + font settings, bold control/regular message hierarchy, Hermes delegation panel, image thumbnails decode, dark/light rendering.');
 }finally{await browser.close();}

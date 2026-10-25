@@ -97,6 +97,8 @@ export class SessionController extends EventEmitter {
   });
  }
  async listSaved(){return this.control.sessions(this.cwd());}
+ /** Hermes' own delegation policy + child runs for this workspace, straight from the bridge. */
+ async delegation(){return this.control.subagents(this.cwd());}
  get active():ConversationSession|undefined{return this.sessions.find(s=>s.id===this.activeId);}
  /** Context usage for one session, preferring the live stream over a static inspect. */
  usage(id:string):ConversationSession['context']{

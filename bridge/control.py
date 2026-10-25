@@ -383,6 +383,68 @@ class HermesSessionControl:
         caps = EffortCatalog().resolve(provider, model, resolved)
         return summarize_model(provider, model, resolved, endpoint_entry, catalog_entry, caps, label)
 
+    def _subagents(self, cwd):
+        """Everything Hermes knows about delegation for this workspace.
+
+        Two sources, kept apart from the editor's own worker presets: the delegation policy from
+        `config.yaml` (limits, model) and the subagent runs Hermes persisted (`source='subagent'`, one
+        row per delegate_task child, `ended_at` null while live). A run belongs to this workspace
+        through its parent conversation, because a child row carries no cwd of its own.
+        """
+        import os
+        from pathlib import Path
+        config = {}
+        try:
+            from hermes_cli.config import load_config
+            raw = (load_config() or {}).get('delegation') or {}
+            # Policy fields only: api_key/bearer material lives in the same block and must not leave.
+            config = {'backend': str(raw.get('backend') or 'default'),
+                      'model': str(raw.get('model') or ''),
+                      'provider': str(raw.get('provider') or ''),
+                      'maxConcurrent': int(raw.get('max_concurrent_children') or 0),
+                      'maxDepth': int(raw.get('max_spawn_depth') or 0),
+                      'childTimeoutSeconds': int(raw.get('child_timeout_seconds') or 0),
+                      'orchestrator': bool(raw.get('orchestrator_enabled', True)),
+                      'oneshotMaxChildren': int(raw.get('oneshot_max_children') or 0)}
+        except Exception:
+            config = {}
+        home = Path(os.environ.get('HERMES_HOME') or (Path.home() / '.hermes'))
+        path = home / 'state.db'
+        if not path.exists():
+            return {'policy': config, 'running': [], 'recent': []}
+        from hermes_state import SessionDB
+        wanted = os.path.normpath(cwd) if cwd else ''
+        parents = {}
+        children = []
+        with SessionDB(db_path=path, read_only=True) as db:
+            for row in db.list_sessions_rich(sources=['acp', 'local'], local_created_sources=['acp'],
+                                             include_archived=True, limit=300):
+                row_cwd = row.get('cwd') or ''
+                if wanted and os.path.normpath(row_cwd) != wanted:
+                    continue
+                parents[str(row.get('id'))] = str(row.get('title') or '')
+            children = db.list_sessions_rich(sources=['subagent'], include_subagents=True,
+                                             include_archived=True, limit=200)
+        runs = []
+        for row in children:
+            parent = str(row.get('parent_session_id') or '')
+            if wanted and parent not in parents:
+                continue
+            runs.append({'id': str(row.get('id') or ''),
+                         'title': str(row.get('title') or 'Subagent run'),
+                         'parentTitle': parents.get(parent, 'Another conversation'),
+                         'model': str(row.get('model') or ''),
+                         'messages': int(row.get('message_count') or 0),
+                         'tools': int(row.get('tool_call_count') or 0),
+                         'startedAt': row.get('started_at'),
+                         'lastActivityAt': row.get('last_active') or row.get('started_at'),
+                         'endedAt': row.get('ended_at'),
+                         'endReason': str(row.get('end_reason') or '')})
+        runs.sort(key=lambda run: float(run.get('startedAt') or 0), reverse=True)
+        running = [run for run in runs if not run.get('endedAt')]
+        recent = [run for run in runs if run.get('endedAt')][:40]
+        return {'policy': config, 'running': running, 'recent': recent}
+
     def _sessions(self, cwd):
         """Conversations this editor created for one workspace, read from Hermes' own database.
 
@@ -420,6 +482,8 @@ class HermesSessionControl:
 
     async def execute(self, request):
         action = request.get('action')
+        if action == 'subagents':
+            return self._subagents(str(request.get('cwd') or ''))
         if action == 'sessions':
             return self._sessions(str(request.get('cwd') or ''))
         if action == 'catalog':

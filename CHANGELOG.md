@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.31
+
+- **The Subagents tab now shows delegation itself, not just presets.** Opening it asks Hermes for
+  `delegate_task` state and renders: the policy that governs child runs (concurrent children, spawn
+  depth, child timeout, orchestrator, one-shot limit, child model, backend), every child run that is
+  live right now, and the recent finished runs with model, message/tool counts, duration and the
+  conversation they were delegated from. Refresh re-reads it on demand.
+- New bridge action `subagents`: reads the `delegation:` policy block (never `api_key`) and
+  `source='subagent'` rows from Hermes' `state.db`, attributed to this workspace through their parent
+  conversation. Nothing is inferred: a missing value reads as unknown.
+- `scripts/delegation-smoke.ts` (`npm run test:subagents`) proves it against a live install.
+
 ## 0.1.30
 
 - **Status bar: four equal cells.** Spinner+state, approval mode, context meter and Compact each take

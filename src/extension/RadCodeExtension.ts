@@ -313,6 +313,15 @@ export class RadCodeExtension implements vscode.Disposable {
   const configured=vscode.workspace.getConfiguration('radcode').get<string>('hermesHome','')||process.env.HERMES_HOME||'';
   return configured||path.join(homedir(),'.hermes');
  }
+ /** Everything Hermes reports about delegation: policy, live children and recent runs. */
+ private async readDelegation():Promise<void>{
+  try{
+   const snapshot=await this.controller.delegation();
+   this.view.post({type:'subagents',...snapshot});
+  }catch(error){
+   this.view.post({type:'subagents',error:String(error instanceof Error?error.message:error),running:[],recent:[]});
+  }
+ }
  private async readProfileFiles():Promise<void>{
   const home=this.profileHome();
   this.view.post({type:'profile',home,files:await readProfile(home)});
@@ -440,6 +449,7 @@ export class RadCodeExtension implements vscode.Disposable {
     return this.controller.setModel(id(),m.value);
    },
    profile:()=>this.readProfileFiles(),
+   subagents:()=>this.readDelegation(),
    saveProfile:m=>this.writeProfileFile(m),
    select:async(m,id)=>{
     const saved=this.context.workspaceState.get<RecentSession[]>('recentSessions',[]).find(s=>s.id===id()&&s.profile===this.profile);

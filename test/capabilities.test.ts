@@ -25,6 +25,7 @@ const control:SessionControl={
  capabilities:async()=>({values:['none','low','high'],note:'test fixture'}),
  modelInfo:async()=>({provider:'p',providerLabel:'P',model:'m',baseUrl:'',lab:'',context:null,contextSource:'',catalogName:'',capabilities:{values:[],note:''}}),
  sessions:async()=>[],
+ subagents:async()=>({running:[],recent:[]}),
 };
 const PNG='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
