@@ -3,7 +3,7 @@ import { promisify } from 'node:util';
 import path from 'node:path';
 
 export interface EffortCapabilities { values: string[]; note: string; }
-export interface ContextUsage { used: number | null; limit: number | null; messages: number; compactions: number; }
+export interface ContextUsage { used: number | null; limit: number | null; messages: number; compactions: number; /** Where the window came from: live stream, an inspect, or the model catalog. */ source?: 'stream'|'session'|'catalog'; }
 // `undefined` means Hermes did not report it; the UI shows "unknown" rather than a fake number.
 /** Provider/model facts the picker's detail pane shows; `context` is null when no source published it. */
 export interface ModelDetails {

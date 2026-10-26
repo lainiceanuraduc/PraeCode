@@ -372,6 +372,7 @@ export class RadCodeExtension implements vscode.Disposable {
   if(focus===undefined)return;
   const result=await this.controller.compact(session.id,focus.trim());
   this.view.post({type:'compacted',id:session.id,...result,focus:focus.trim()});
+  if(result.warning)void vscode.window.showWarningMessage(result.warning);
   this.publish();
  }
 
@@ -457,8 +458,11 @@ export class RadCodeExtension implements vscode.Disposable {
     else this.controller.select(id());
     this.view.post({type:'showChat'});
    },
-   rename:(m,id)=>{
+   rename:async(m,id)=>{
     if(typeof m.title!=='string')throw new Error('Enter a session name');
+    // A conversation that is only in the saved index has no live session object, but Hermes can
+    // still rename it: the edit lives in the database, not in this window.
+    if(!this.service?.sessions.some(s=>s.id===id()))return this.controller.renameSaved(id(),m.title);
     return this.controller.rename(id(),m.title);
    },
    send:(m,id)=>this.sendMessage(m,id()),
@@ -508,6 +512,7 @@ export class RadCodeExtension implements vscode.Disposable {
     return this.controller.compact(id(),focus)
      .then(result=>this.view.post({type:'compacted',id:id(),...result,focus}));
    },
+
    permission:(m)=>{
     if(typeof m.requestId!=='string'||typeof m.optionId!=='string')throw new Error('Invalid approval response');
     if(!this.permissions.settle(m.requestId,{outcome:'selected',optionId:m.optionId}))

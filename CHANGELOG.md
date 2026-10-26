@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.32
+
+- **Renaming no longer depends on the ACP connection.** A rename is a metadata edit in Hermes, not a
+  conversation action, so a session that is disconnected — or that only exists in the saved index and
+  was never loaded in this window — can still be renamed (`SessionController.renameSaved`). Only a
+  running turn is refused now; the old "resume it first" refusal is gone.
+- **A failed transcript replay after a successful compaction is a warning, not an error.** Hermes has
+  already committed the summary when the replay runs, so re-attaching failing used to report the whole
+  compaction as failed while the context really was compacted — inviting the user to compact again.
+  "Nothing to compact" is now a result too, never an error.
+- **The context window is shown before the first turn.** `session.info` never publishes a window and
+  occupancy only arrives with `usage_update`, so the meter used to appear only after a prompt. The
+  model catalog's window is now the denominator at load (`context.source: 'catalog'`), the meter reads
+  "209k window" until Hermes reports occupancy, and an inspect that omits the window can no longer
+  erase a known one.
+
 ## 0.1.31
 
 - **The Subagents tab now shows delegation itself, not just presets.** Opening it asks Hermes for

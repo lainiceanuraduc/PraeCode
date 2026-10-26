@@ -1,10 +1,10 @@
 # PraeCode — Hermes Agent for VS Code
 
-[![Version](https://img.shields.io/badge/version-0.1.31-e5b93c)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.32-e5b93c)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-e5b93c)](LICENSE)
 [![GitHub](https://img.shields.io/badge/source-GitHub-e5b93c)](https://github.com/lainiceanuraduc/PraeCode)
 
-A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.31.
+A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.32.
 It talks to your existing Hermes installation over **ACP** (Agent Client Protocol) — no API keys are
 stored in VS Code, and no Hermes configuration is modified.
 
@@ -56,6 +56,15 @@ Extension Development Host.
 > `hermes acp --check` prints `Hermes ACP check OK`; the view still renders and tells you what is
 > missing.
 
+
+## What's new in 0.1.32
+
+- **Rename works on every stored conversation**, including ones that are disconnected or never loaded
+  in this window: it is a metadata edit in Hermes, so it no longer needs a live ACP connection.
+- **Compaction reports what actually happened.** A transcript replay that fails *after* Hermes has
+  committed the summary is a warning, not a failed compaction; "nothing to compact" is a result.
+- **The context window appears on load**, taken from the model catalog, and reads as "209k window"
+  until Hermes reports occupancy — instead of an empty meter until the first prompt.
 
 ## What's new in 0.1.31
 
@@ -288,7 +297,7 @@ npm test              # unit tests (transport, ACP, presets, sessions, control)
 npm run test:python   # Hermes-side helper tests (needs Hermes' Python)
 npm run test:ui       # Playwright: rendering, CSP, sanitization, capability select, a11y labels
 npm run test:live     # real ACP handshake + session + effort read-back
-npm run package       # produces praecode-0.1.31.vsix
+npm run package       # produces praecode-0.1.32.vsix
 ```
 
 The extension-host test (`test/extension-host.ts`) is run in a real editor:

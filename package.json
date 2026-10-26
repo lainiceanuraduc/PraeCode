@@ -2,7 +2,7 @@
   "name": "praecode",
   "displayName": "PraeCode - Hermes Agent",
   "description": "Hermes Agent workspace chat, model-aware thinking controls, and configurable worker agents.",
-  "version": "0.1.31",
+  "version": "0.1.32",
   "publisher": "lainiceanuraduc",
   "license": "MIT",
   "engines": {

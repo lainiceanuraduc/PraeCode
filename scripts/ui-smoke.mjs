@@ -77,6 +77,16 @@ try{
  await page.evaluate(()=>window.postMessage({type:'state',sessions:[{id:'s',title:'Test conversation',kind:'chat',status:'idle',messages:[],info:{model:'m',provider:'p',effort:'high',capabilities:{values:['high'],note:'n'},messages:12,context:{used:50000,limit:200000,messages:12,compactions:1}},modes:{current:'default',available:[{id:'default',name:'Default',description:'Ask before edits.'},{id:'accept_edits',name:'Accept Edits'},{id:'dont_ask',name:"Don't Ask"}]}}],activeId:'s',presets:[],recent:[],appearance:{accent:'lime',fontFamily:'monospace',fontSize:13,lineHeight:0,compact:false}},'*'));
  await page.locator('#context-meter:not([hidden])').waitFor();
  assert.match(await page.locator('#context-text').textContent(),/25% of 200k · 12 msgs · 1× compacted/);
+// Before the first turn Hermes publishes no occupancy, but the model catalog knows the window: the
+// meter must still say something true instead of hiding.
+await page.evaluate(()=>window.postMessage({type:'state',sessions:[{id:'s',title:'Test conversation',kind:'chat',status:'idle',
+ messages:[],info:{model:'m',provider:'p',effort:'high',capabilities:{values:['high'],note:'n'},
+ context:{used:null,limit:209000,messages:0,compactions:0,source:'catalog'}},
+ modes:{current:'default',available:[{id:'default',name:'Default',description:'Ask before edits.'},{id:'accept_edits',name:'Accept Edits'},{id:'dont_ask',name:"Don't Ask"}]}}],
+ activeId:'s',presets:[],recent:[],appearance:{accent:'lime',fontSize:10,lineHeight:0,compact:false}},'*'));
+await page.locator('#context-meter:not([hidden])').waitFor();
+assert.match(await page.locator('#context-text').textContent(),/209k window/,'the window shows before any turn');
+assert.doesNotMatch(await page.locator('#context-text').textContent(),/%/,'no percentage is invented from a missing occupancy');
  await page.getByRole('tab',{name:'Subagents'}).click();
  await page.getByRole('button',{name:'New preset',exact:true}).click();
  await page.getByLabel('Agent name').fill('Reviewer');
@@ -342,7 +352,10 @@ await page.setViewportSize({width:430,height:900});
 await page.evaluate(()=>window.postMessage({type:'state',sessions:[{id:'s',title:'Pixel typography',kind:'chat',status:'idle',
  messages:[{id:'u',role:'user',text:'Use Public Pixel everywhere.'},
  {id:'a',role:'assistant',text:'One family: **bold**, *italic*, and `inline code`.\n\n```ts\nconst font = "Public Pixel";\n```'}],
- info:{model:'codestral',provider:'mistral',effort:'high',capabilities:{values:['none','high'],note:''}}}],
+ info:{model:'codestral',provider:'mistral',effort:'high',capabilities:{values:['none','high'],note:''},
+  messages:12,context:{used:52000,limit:200000,messages:12,compactions:0,source:'stream'}},
+ modes:{current:'dont_ask',available:[{id:'default',name:'Ask'},{id:'accept_edits',name:'Accept Edits'},{id:'dont_ask',name:"Don't Ask"}]},
+ warning:''}],
  activeId:'s',presets:[],recent:[],appearance:{accent:'yellow',fontSize:10,lineHeight:0,compact:false}},'*'));
 await page.waitForTimeout(80);
 // ---- Screenshots ---------------------------------------------------------------

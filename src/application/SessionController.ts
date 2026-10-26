@@ -28,7 +28,7 @@ export class ConversationSession {
  /** Whether this session's agent accepts image blocks; false disables pasting in the composer. */
  acceptsImages=false;
  /** Context telemetry for the meter: from the live `usage_update` stream, else from `session.info`. */
- context?:{used:number|null;limit:number|null;messages:number;compactions:number;source:'stream'|'session'};
+ context?:{used:number|null;limit:number|null;messages:number;compactions:number;source:'stream'|'session'|'catalog'};
  status:SessionStatus='idle';info?:SessionInfo;warning='';models:any[]=[];commands:any[]=[];usage:any;
  /** ACP modes: the edit-approval policy (ask / workspace_session / session) plus display names. */
  modes:{available:{id:string;name:string;description?:string}[];current:string}={available:[],current:''};
@@ -155,8 +155,9 @@ export class SessionController extends EventEmitter {
  private adoptInfo(s:ConversationSession,info:SessionInfo):void{
   const raw=info as SessionInfo & {contextTokens?:number|null;contextWindow?:number|null;compactions?:number};
   const live=s.context?.source==='stream'?s.context:undefined;
-  info.context={used:live?.used??raw.contextTokens??null,
-                limit:live?.limit??raw.contextWindow??null,
+  // Never regress to null: a window learned from the model catalog outlives an inspect that omits it.
+  info.context={used:live?.used??raw.contextTokens??s.context?.used??null,
+                limit:live?.limit??raw.contextWindow??s.context?.limit??null,
                 messages:raw.messages??live?.messages??0,
                 compactions:raw.compactions??0};
   s.info=info;
@@ -280,7 +281,11 @@ export class SessionController extends EventEmitter {
   }finally{s.status='idle';this.changed();}
  }
  async rename(id:string,title:string):Promise<void>{
-  const s=this.get(id);this.requireIdle(s);
+  const s=this.get(id);
+  // A rename is a metadata edit on Hermes, not a conversation action: it needs no ACP turn and no
+  // live load, so a session that is disconnected (or was never resumed in this window) can still be
+  // renamed. Only a running turn must be left alone.
+  if(s.busy)throw new Error('Wait for the current turn to finish before renaming');
   // Collapse whitespace: the title is also a display and export name, never a wire payload.
   const clean=title.replace(/\s+/g,' ').trim();
   if(!clean)throw new Error('Enter a session name');
@@ -293,6 +298,17 @@ export class SessionController extends EventEmitter {
    s.title=result.title;
    if(this.recent)this.recent(s.id,s.title);
   }finally{s.status='idle';this.changed();}
+ }
+ /** Rename a conversation that is only in the saved index (never loaded in this window). */
+ async renameSaved(id:string,title:string):Promise<string>{
+  const clean=title.replace(/\s+/g,' ').trim();
+  if(!clean)throw new Error('Enter a session name');
+  if(clean.length>120)throw new Error('Session names are limited to 120 characters');
+  const result=await this.control.rename(id,clean);
+  if(!result.title)throw new Error('Hermes did not confirm the session name');
+  if(this.recent)this.recent(id,result.title);
+  this.changed();
+  return result.title;
  }
  /** Hook for the extension to keep its recent-session list in step with a rename. */
  recent?:(id:string,title:string)=>void;
@@ -314,24 +330,44 @@ export class SessionController extends EventEmitter {
   }catch(e){
    s.info.capabilities={values:[],note:`Could not read capabilities: ${e instanceof Error?e.message:String(e)}`};
   }
+  // `session.info` never reports a context window and `usage_update` only arrives after a turn, so
+  // the meter had nothing to show until the first prompt. The model catalog knows the window up
+  // front: use it as the denominator, and leave `used` unknown until Hermes reports occupancy.
+  try{
+   const details=await this.control.modelInfo(s.info.provider,s.info.model,s.info.baseUrl);
+   if(details.context&&(!s.info.context||s.info.context.source==='session'||s.info.context.limit===null)){
+    s.info.context={used:s.info.context?.used??null,limit:details.context,
+     messages:s.info.context?.messages??0,compactions:s.info.context?.compactions??0,source:'catalog'};
+   }
+  }catch{/* a missing window stays unknown rather than a made-up number */}
   this.changed();
  }
  /**
   * Manual compaction is a fenced `session.mutate compress`, exactly what `/compress` does, so the
   * summary is produced by Hermes and the transcript is rebuilt from its committed snapshot.
   */
- async compact(id:string,focus=''):Promise<{before:number;after:number}>{
-  const s=this.get(id);this.requireIdle(s);
+ async compact(id:string,focus=''):Promise<{before:number;after:number;nothing?:boolean;warning?:string}>{
+  const s=this.get(id);
+  // Compaction is Hermes' own mutation on stored rows, so a disconnected session can still be
+  // compacted; only a live turn must be left alone.
+  if(s.busy)throw new Error('Wait for the current turn to finish before compacting');
   const before=s.messages.length;
   s.status='configuring';this.changed();
   try{
-   await this.control.compact(id,focus);
-   await this.refresh(s);
-   // Hermes owns the summary and archives the compacted rows; re-attaching replays what is left.
-   // The transcript is only cleared once the replay succeeded — a failed reload must not leave the
-   // user staring at an empty conversation.
-   await this.reload(s);
-   return {before,after:s.messages.length};
+   const result=await this.control.compact(id,focus);
+   if(result.compressed===false){
+    // Hermes had nothing older than the recent window to summarise; that is not a failure.
+    await this.refresh(s).catch(()=>undefined);
+    return {before,after:before,nothing:true};
+   }
+   await this.refresh(s).catch(()=>undefined);
+   // Hermes already owns the commit at this point. Re-attaching replays what is left, but a replay
+   // failure must never be reported as a failed compaction: the context WAS compacted, and the user
+   // would otherwise compact again and again.
+   let warning='';
+   try{await this.reload(s);}
+   catch(error){warning=`Compacted, but the remaining transcript could not be replayed: ${error instanceof Error?error.message:String(error)}`;}
+   return {before,after:s.messages.length,warning:warning||undefined};
   }finally{s.status='idle';this.changed();}
  }
  /**

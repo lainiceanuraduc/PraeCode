@@ -175,7 +175,7 @@ export class RadCodeView {
   else if(message.type==='permissionSettled')this.approvals.settle(String(message.requestId));
   else if(message.type==='compacted'){
    element('error-text').textContent=message.compressed
-    ?`Compacted ${message.before??'?'} → ${message.after??'?'} messages`
+    ?`Compacted ${message.before??'?'} → ${message.after??'?'} messages${message.warning?` — ${message.warning}`:''}`
     :'Nothing to compact yet';
    element('error').hidden=false;element('error').classList.add('info');
   }
@@ -197,7 +197,10 @@ export class RadCodeView {
   */
  private renderContext(info:any):void{
   const meter=element('context-meter');const usage:ContextUsage|undefined=info?.context;
-  const hasNumbers=typeof usage?.used==='number'||typeof info?.messages==='number';
+  // A known context window is a fact worth showing before the first turn (Hermes only publishes
+  // occupancy through `usage_update`, which needs a prompt). Unknown occupancy stays unknown.
+  const hasNumbers=typeof usage?.used==='number'||typeof info?.messages==='number'
+   ||(typeof usage?.limit==='number'&&usage.limit>0);
   meter.hidden=!info||!hasNumbers;
   const compact=element<HTMLButtonElement>('compact');
   compact.disabled=!info||['running','configuring','cancelling','disconnected'].includes(this.state.sessions.find(s=>s.id===this.state.activeId)?.status??'');
@@ -214,6 +217,7 @@ export class RadCodeView {
   const parts:string[]=[];
   if(used!==null&&limit)parts.push(`${Math.round(ratio!*100)}% of ${Math.round(limit/1000)}k`);
   else if(used!==null)parts.push(`${Math.round(used/1000)}k tokens`);
+  else if(limit)parts.push(`${Math.round(limit/1000)}k window`);
   else parts.push('context size unknown');
   const messages=usage?.messages??info.messages??0;
   if(messages)parts.push(`${messages} msgs`);
