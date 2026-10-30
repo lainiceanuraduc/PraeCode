@@ -1,10 +1,10 @@
 # PraeCode — Hermes Agent for VS Code
 
-[![Version](https://img.shields.io/badge/version-0.1.34-e5b93c)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.35-e5b93c)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-e5b93c)](LICENSE)
 [![GitHub](https://img.shields.io/badge/source-GitHub-e5b93c)](https://github.com/lainiceanuraduc/PraeCode)
 
-A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.34.
+A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.35.
 It talks to your existing Hermes installation over **ACP** (Agent Client Protocol) — no API keys are
 stored in VS Code, and no Hermes configuration is modified.
 
@@ -56,6 +56,15 @@ Extension Development Host.
 > `hermes acp --check` prints `Hermes ACP check OK`; the view still renders and tells you what is
 > missing.
 
+
+## What's new in 0.1.35
+
+- **"+ Provider" in the model picker.** Add an OpenAI-compatible endpoint Hermes does not know yet —
+  a local Ollama server, vLLM, LM Studio — with **Test** (probe only) and **Save**. The entry is
+  written through Hermes' own `save_config`; an API key goes to the profile's `.env` and only the
+  variable name is stored in `config.yaml`.
+- Validation is local and specific: the id must be lowercase and not reuse a Hermes name, and the URL
+  must be an API root (`…/v1`), not a route like `…/chat/completions`. The host re-checks it all.
 
 ## What's new in 0.1.34
 
@@ -334,7 +343,7 @@ npm test              # unit tests (transport, ACP, presets, sessions, control)
 npm run test:python   # Hermes-side helper tests (needs Hermes' Python)
 npm run test:ui       # Playwright: rendering, CSP, sanitization, capability select, a11y labels
 npm run test:live     # real ACP handshake + session + effort read-back
-npm run package       # produces praecode-0.1.34.vsix
+npm run package       # produces praecode-0.1.35.vsix
 ```
 
 The extension-host test (`test/extension-host.ts`) is run in a real editor:

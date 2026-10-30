@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.1.35
+
+- **"+ Provider" in the model picker.** The picker could only choose among providers Hermes already
+  knew, so a local Ollama install had no way in. The new form takes an id, display name, base URL,
+  optional API key and optional default model, with **Test** (probes `<base>/models` without writing
+  anything) and **Save**.
+- **The write goes through Hermes, not through YAML editing.** The bridge calls
+  `hermes_cli.config.save_config(..., merge_existing=True)`, so the `providers:` block keeps its
+  schema handling and the rest of `config.yaml` is untouched. An API key is written to the profile's
+  `.env` as `<ID>_API_KEY` (mode 0600) and only the variable *name* is stored in `config.yaml` — a key
+  never lands in the file people paste into issues.
+- **Validation is local and specific.** The id must be lowercase/digits/dots/hyphens and may not
+  reuse a Hermes name (`custom`, `model`, …); the URL must be a full http(s) **API root**, not a
+  route such as `…/chat/completions`. The host re-checks every rule, because the webview is not
+  trusted. `src/domain/ProviderDraft.ts` holds the rules and `test/provider.test.ts` covers them.
+- **Saving probes the endpoint once** and reports how many models answered; a server that is down is a
+  warning on an already-saved provider, not a failed save. A new provider takes effect in a new
+  conversation, and the notification offers to open one.
+- `scripts/provider-smoke.ts` (`npm run test:provider`) exercises Test + Save against a throwaway
+  `HERMES_HOME`, so it never touches the real profile.
+
 ## 0.1.34
 
 - **Three bundled faces, one per role, all CC0 1.0.** Titles use **Anklepants** (Ray Larabie),

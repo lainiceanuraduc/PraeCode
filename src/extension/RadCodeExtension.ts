@@ -22,6 +22,7 @@ import {mcpServers,appearance,clampTextSize} from './Settings';
 import {readProfile,saveProfile} from './ProfileStore';
 import {toggleFavorite} from '../domain/ModelCatalog';
 import {editorContext,readAttachments,readImages} from './Inputs';
+import {normalizeProviderId,providerDraftErrors} from '../domain/ProviderDraft';
 import {PermissionBroker} from './PermissionBroker';
 import {captureScreenshot} from './screenshot';
 
@@ -323,6 +324,29 @@ export class RadCodeExtension implements vscode.Disposable {
   }
  }
 
+ /**
+  * Add or update a provider. Validation happens in the webview for instant feedback and again here,
+  * because the webview is not trusted: the id and URL are re-checked before anything is written.
+  */
+ private async saveProvider(m:Record<string,any>):Promise<void>{
+  const draft={id:String(m.id??''),label:String(m.label??''),baseUrl:String(m.baseUrl??''),
+   apiKey:String(m.apiKey??''),defaultModel:String(m.defaultModel??'')};
+  const errors=providerDraftErrors(draft);
+  if(errors.length)throw new Error(errors[0].message);
+  const result=await this.controller.control.saveProvider({...draft,id:normalizeProviderId(draft.id)});
+  this.view.post({type:'providerSaved',result});
+  // A new provider only appears in a session created after the config change, so say so plainly.
+  void vscode.window.showInformationMessage(
+   `Provider “${result.label}” saved to Hermes. Open a new conversation to use it.`,'New conversation')
+   .then(choice=>{if(choice)void this.newSession();});
+ }
+ private async testProvider(m:Record<string,any>):Promise<void>{
+  const baseUrl=String(m.baseUrl??'').trim();
+  if(!baseUrl)throw new Error('Enter the endpoint base URL first');
+  const result=await this.controller.control.testProvider(baseUrl,String(m.apiKey??''));
+  this.view.post({type:'providerTest',result});
+ }
+
  /** The profile directory, resolved the same way the runtime resolves it. */
  private profileHome():string{
   if(this.profile)return this.profile;
@@ -462,6 +486,9 @@ export class RadCodeExtension implements vscode.Disposable {
    favorite:m=>this.setFavorite(m),
    modelInfo:m=>this.readModelInfo(m),
    modelFacts:()=>this.readModelFacts(),
+   // Adding a provider is a config write, so it goes through the bridge (Hermes' own save_config).
+   providerSave:m=>this.saveProvider(m),
+   providerTest:m=>this.testProvider(m),
    useModel:(m,id)=>{
     if(typeof m.value!=='string')throw new Error('Choose a model first');
     return this.controller.setModel(id(),m.value);

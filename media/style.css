@@ -370,3 +370,18 @@ textarea,input:not([type=range]):not([type=checkbox]),#composer textarea,.profil
  color:var(--vscode-editorWarning-foreground,#e1b35e)}
 .model-list li.blocked .model-name{opacity:.6}
 .model-list li.blocked .model-row{cursor:not-allowed}
+
+/* ---- Add-provider form ------------------------------------------------------------
+ * Same modal language as the model picker: a headed dialog that scrolls internally, with the note
+ * line carrying validation errors (red) and probe results (accent). */
+#provider-dialog{width:min(520px,94vw);max-height:86vh;padding:0;border:1px solid var(--border);
+ border-radius:10px;background:var(--vscode-editor-background,var(--panel));color:var(--fg);overflow:hidden}
+#provider-dialog::backdrop{background:rgba(0,0,0,.55)}
+.provider-body{padding:12px 14px;overflow:auto;max-height:calc(86vh - 60px)}
+.provider-body label{margin-top:10px}
+.provider-body label:first-of-type{margin-top:4px}
+.provider-body input{font-size:var(--font-detail)}
+#provider-note{margin:10px 0 0;min-height:1.4em}
+#provider-note.error{color:var(--vscode-errorForeground,#e06c75)}
+#provider-note.ok{color:var(--accent-hover)}
+.provider-body .actions{justify-content:flex-end;margin-top:12px}

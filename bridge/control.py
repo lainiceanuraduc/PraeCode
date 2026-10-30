@@ -246,9 +246,16 @@ def route_efforts(provider, model, base_url=''):
 
 
 def _is_mistral_profile(profile):
-    """True only for the bundled plugin profile (declares our exact ladder), not a hypothetical one."""
+    """True only for the bundled plugin profile (declares our exact ladder), not a hypothetical one.
+
+    The comparison must use the *current* seed for a known model, not a hard-coded tuple: when the
+    table moved ``mistral-large-4`` from ``none/high`` to ``low/medium/high``, a literal here made
+    every check fail and the UI claimed no Mistral profile was installed while it was.
+    """
     try:
-        return tuple(profile.supported_reasoning_efforts('mistral-large-4') or ()) == MISTRAL_NATIVE_EFFORTS
+        expected = (_mistral_static('mistral-large-4') if _mistral_static is not None
+                    else MISTRAL_NATIVE_EFFORTS)
+        return tuple(profile.supported_reasoning_efforts('mistral-large-4') or ()) == tuple(expected or ())
     except Exception:
         return False
 
@@ -491,6 +498,83 @@ class HermesSessionControl:
         caps = EffortCatalog().resolve(provider, model, resolved)
         return summarize_model(provider, model, resolved, endpoint_entry, catalog_entry, caps, label)
 
+    def _provider_save(self, request):
+        """Add or update one provider in Hermes' own `providers:` block.
+
+        Written through `hermes_cli.config.save_config` (not by editing YAML here), so the file keeps
+        its schema handling, comments and unknown-key notices. The API key goes to the profile's
+        `.env` under `<ID>_API_KEY` and the config stores only that variable's name — a key never
+        lands in `config.yaml`, which is the file people paste into issues.
+        """
+        import os
+        import re
+        from pathlib import Path
+        provider_id = str(request.get('id') or '').strip().lower()
+        if not re.fullmatch(r'[a-z0-9][a-z0-9._-]{0,39}', provider_id or ''):
+            raise ValueError('Provider id must be lowercase letters, digits, dots or hyphens (max 40)')
+        base_url = str(request.get('baseUrl') or '').strip().rstrip('/')
+        if not re.match(r'^https?://', base_url):
+            raise ValueError('Base URL must start with http:// or https://')
+        label = str(request.get('label') or provider_id).strip()[:60]
+        default_model = str(request.get('defaultModel') or '').strip()[:200]
+        api_key = str(request.get('apiKey') or '').strip()
+
+        home = Path(os.environ.get('HERMES_HOME') or (Path.home() / '.hermes'))
+        key_env = ''
+        if api_key:
+            key_env = f"{provider_id.upper().replace('-', '_').replace('.', '_')}_API_KEY"
+            env_path = home / '.env'
+            lines = []
+            if env_path.exists():
+                lines = [line for line in env_path.read_text().splitlines()
+                         if not line.startswith(f'{key_env}=')]
+            lines.append(f'{key_env}={api_key}')
+            env_path.write_text('\n'.join(lines) + '\n')
+            with contextlib.suppress(OSError):
+                os.chmod(env_path, 0o600)
+
+        from hermes_cli.config import load_config, save_config
+        config = load_config()
+        providers = config.get('providers')
+        if not isinstance(providers, dict):
+            providers = {}
+        entry = {'api': base_url, 'base_url': base_url, 'name': label, 'discover_models': True}
+        if default_model:
+            entry['default_model'] = default_model
+            entry['model'] = default_model
+        if key_env:
+            entry['key_env'] = key_env
+        providers[provider_id] = {**(providers.get(provider_id) or {}), **entry}
+        config['providers'] = providers
+        save_config(config, merge_existing=True)
+
+        # Probe the endpoint once so the picker can list its models immediately. A failure is a
+        # warning, not an error: the provider is already saved and may simply be offline right now.
+        models, warning = [], ''
+        try:
+            models = self._provider_models(base_url, api_key)
+        except Exception as exc:
+            warning = f'Saved, but the endpoint did not answer: {exc}'
+        return {'id': provider_id, 'label': label, 'baseUrl': base_url,
+                'defaultModel': default_model, 'hasKey': bool(api_key),
+                'models': models[:200], 'warning': warning}
+
+    def _provider_models(self, base_url, api_key=''):
+        """`GET <base>/models` → model ids; raises with the endpoint's own status on failure."""
+        import urllib.error
+        import urllib.request
+        request = urllib.request.Request(base_url.rstrip('/') + '/models',
+                                         headers={'Authorization': f'Bearer {api_key}'} if api_key else {})
+        try:
+            with urllib.request.urlopen(request, timeout=15) as response:
+                payload = json.loads(response.read().decode('utf-8', 'replace'))
+        except urllib.error.HTTPError as exc:
+            raise RuntimeError(f'HTTP {exc.code} from {base_url}/models') from exc
+        rows = payload.get('data') if isinstance(payload, dict) else None
+        if not isinstance(rows, list):
+            raise RuntimeError('the endpoint did not return a model list')
+        return [str(row.get('id')) for row in rows if isinstance(row, dict) and row.get('id')]
+
     def _subagents(self, cwd):
         """Everything Hermes knows about delegation for this workspace.
 
@@ -623,6 +707,18 @@ class HermesSessionControl:
                                'effortsSource': ('discovered' if _mistral_discovered and _mistral_discovered(model_id)
                                                  else ('seed' if ladder is not None else 'unknown'))})
             return {'models': listed, 'count': len(listed)}
+        if action == 'provider_save':
+            return self._provider_save(request)
+        if action == 'provider_test':
+            # Probe only: nothing is written, so a wrong URL costs one request, not a config edit.
+            base_url = str(request.get('baseUrl') or '').strip().rstrip('/')
+            if not base_url.startswith(('http://', 'https://')):
+                raise ValueError('Base URL must start with http:// or https://')
+            try:
+                models = self._provider_models(base_url, str(request.get('apiKey') or '').strip())
+                return {'ok': True, 'models': models[:200], 'count': len(models)}
+            except Exception as exc:
+                return {'ok': False, 'error': str(exc)}
         if action == 'subagents':
             return self._subagents(str(request.get('cwd') or ''))
         if action == 'sessions':

@@ -27,6 +27,10 @@ const control:SessionControl={
  subagents:async()=>({running:[],recent:[]}),
  mistralModels:async()=>({count:0,models:[]}),
  mistralDiscover:async(model:string)=>({model,levels:null,note:'',source:'unavailable'}),
+ saveProvider:async(d)=>({id:d.id,label:d.label||d.id,baseUrl:d.baseUrl,defaultModel:d.defaultModel,
+  hasKey:!!d.apiKey,models:[]}),
+ testProvider:async()=>({ok:true,models:[],count:0}),
+
  rename:async(id:string,title:string)=>({sessionId:id,title})
 };
 

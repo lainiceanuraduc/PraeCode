@@ -6,6 +6,7 @@ import {ContextAttachments} from './ContextAttachments';
 import {PastedImages} from './PastedImages';
 import {ApprovalCards} from './ApprovalCards';
 import {ModelPicker} from './ModelPicker';
+import {ProviderForm} from './ProviderForm';
 import {FeaturesPanel} from './FeaturesPanel';
 import {ComposerResize} from './ComposerResize';
 import {IMAGE_MIME} from '../domain/Images';
@@ -25,6 +26,7 @@ export class RadCodeView {
  });
  private approvals=new ApprovalCards((m:any)=>this.post(m));
  private picker=new ModelPicker((m:any)=>this.post(m));
+ private providerForm=new ProviderForm((m:any)=>this.post(m));
  private features=new FeaturesPanel((m:any)=>this.post(m));
  private composerSize=new ComposerResize({
   read:()=>Number(this.api.getState()?.composerHeight)||undefined,
@@ -189,6 +191,8 @@ export class RadCodeView {
   else if(message.type==='favorites')this.picker.setFavorites(message.ids);
   else if(message.type==='modelDetails')this.picker.setDetails(message.details);
   else if(message.type==='modelFacts')this.picker.setModelFacts(message.models);
+  else if(message.type==='providerSaved')this.providerForm.saved(message.result);
+  else if(message.type==='providerTest')this.providerForm.tested(message.result);
   else if(message.type==='profile'){this.features.setFiles(message.files);element('profile-home').textContent=message.home??'HERMES_HOME';}
   else if(message.type==='subagents')this.agents.delegation(message);
   else if(message.type==='profileSaved')this.features.saved(message.id,message.savedAt);
@@ -302,7 +306,6 @@ export class RadCodeView {
   for(const value of active?.info?.capabilities.values??[])effort.add(new Option(value==='none'?'None / Off':value,value));
   if(active?.info?.effort && !Array.from(effort.options).some(o=>o.value===active.info!.effort))effort.add(new Option(`${active.info.effort} (current)`,active.info.effort));
   effort.value=active?.info?.effort||'default';effort.disabled=busy||!active?.info?.capabilities.values.length;
-  element('effort-note').textContent=active?.info?.capabilities.note??'Session controls need a compatible local Hermes runtime.';
   element('status').textContent=active?active.status:'Not connected';
   // The spinner mirrors the turn state: running/starting animate, everything else rests.
   const spinner=element<HTMLElement>('status')?.previousElementSibling as HTMLElement|null;

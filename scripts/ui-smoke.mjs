@@ -317,6 +317,31 @@ assert.match(details,/none, high/,'the thinking/effort ladder is shown');
 const detailWidth=await page.evaluate(()=>{const dd=document.querySelector('#model-details dd');return dd?dd.clientWidth:0;});
 assert.ok(detailWidth>=200,`details values get ${detailWidth}px, expected at least 200px`);
 await assertFonts();
+// "+ Provider": the picker can add an endpoint Hermes does not list yet (Ollama on this machine).
+await page.locator('#picker-add-provider').click();
+await page.locator('#provider-dialog[open]').waitFor();
+assert.equal(await page.locator('#provider-url').inputValue(),'http://localhost:11434/v1','the local Ollama address is prefilled');
+// Validation is local and specific: a bad id never reaches the host.
+await page.locator('#provider-id').fill('Ollama Local');
+await page.locator('#provider-save').click();
+assert.match(await page.locator('#provider-note').textContent(),/lowercase/,'the id rule is explained');
+assert.equal(await page.evaluate(()=>window.sent.some(m=>m.type==='providerSave')),false,'an invalid draft is not sent');
+await page.locator('#provider-id').fill('ollama-local');
+await page.locator('#provider-label').fill('Ollama Local');
+await page.locator('#provider-model').fill('lfm3:latest');
+await page.locator('#provider-test').click();
+assert.deepEqual(await page.evaluate(()=>{const m=window.sent.at(-1);return {type:m.type,baseUrl:m.baseUrl};}),
+ {type:'providerTest',baseUrl:'http://localhost:11434/v1'},'Test probes without saving');
+await page.evaluate(()=>window.postMessage({type:'providerTest',result:{ok:true,models:['lfm3:latest','smollm2:360m'],count:2}},'*'));
+await page.waitForTimeout(50);
+assert.match(await page.locator('#provider-note').textContent(),/Endpoint answered: 2 models/);
+await page.locator('#provider-save').click();
+assert.deepEqual(await page.evaluate(()=>{const m=window.sent.at(-1);return {type:m.type,id:m.id,baseUrl:m.baseUrl,model:m.defaultModel};}),
+ {type:'providerSave',id:'ollama-local',baseUrl:'http://localhost:11434/v1',model:'lfm3:latest'},'a valid draft is sent');
+await page.evaluate(()=>window.postMessage({type:'providerSaved',result:{id:'ollama-local',label:'Ollama Local',
+ baseUrl:'http://localhost:11434/v1',defaultModel:'lfm3:latest',hasKey:false,models:['lfm3:latest']}},'*'));
+await page.waitForTimeout(80);
+assert.equal(await page.locator('#provider-dialog[open]').count(),0,'the form closes once saved');
 await page.locator('#picker-use').click();
 assert.deepEqual(await page.evaluate(()=>{const m=window.sent.at(-1);return {type:m.type,id:m.id,value:m.value};}),
  {type:'useModel',id:'s',value:'mistral:codestral'});
@@ -405,5 +430,5 @@ await page.screenshot({path:'docs/ui-dark.png',fullPage:true});
  await page.addStyleTag({url:'http://radcode.test/theme.css'});
  await page.screenshot({path:'docs/ui-light.png',fullPage:true});
  assert.deepEqual(errors,[]);
- console.log('Webview smoke passed: connect, capability-aware effort, sanitized Markdown, agent form, keyboard send, approval mode select, approval cards, context meter, context attachments, composer clearing, accent + font settings, bold control/regular message hierarchy, Hermes delegation panel, Mistral provider facts, image thumbnails decode, dark/light rendering.');
+ console.log('Webview smoke passed: connect, capability-aware effort, sanitized Markdown, agent form, keyboard send, approval mode select, approval cards, context meter, context attachments, composer clearing, accent + font settings, bold control/regular message hierarchy, Hermes delegation panel, Mistral provider facts, add-provider form, image thumbnails decode, dark/light rendering.');
 }finally{await browser.close();}
