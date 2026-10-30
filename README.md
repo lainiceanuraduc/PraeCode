@@ -1,10 +1,10 @@
 # PraeCode — Hermes Agent for VS Code
 
-[![Version](https://img.shields.io/badge/version-0.1.35-e5b93c)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.36-e5b93c)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-e5b93c)](LICENSE)
 [![GitHub](https://img.shields.io/badge/source-GitHub-e5b93c)](https://github.com/lainiceanuraduc/PraeCode)
 
-A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.35.
+A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.36.
 It talks to your existing Hermes installation over **ACP** (Agent Client Protocol) — no API keys are
 stored in VS Code, and no Hermes configuration is modified.
 
@@ -56,6 +56,14 @@ Extension Development Host.
 > `hermes acp --check` prints `Hermes ACP check OK`; the view still renders and tells you what is
 > missing.
 
+
+## What's new in 0.1.36
+
+- **Grid layout throughout.** Composer actions and the status line are four equal cells; session
+  actions and the tabs are three. The model row is a grid with the model button spanning its width.
+- **One type scale.** Body text is always the text-size slider **+ 1**; session actions are **+5**
+  and settings **+7**. Tabs and titles keep their previous 1.5×/1.6× sizes. No row wraps and no label
+  clips, at any slider value.
 
 ## What's new in 0.1.35
 
@@ -343,7 +351,7 @@ npm test              # unit tests (transport, ACP, presets, sessions, control)
 npm run test:python   # Hermes-side helper tests (needs Hermes' Python)
 npm run test:ui       # Playwright: rendering, CSP, sanitization, capability select, a11y labels
 npm run test:live     # real ACP handshake + session + effort read-back
-npm run package       # produces praecode-0.1.35.vsix
+npm run package       # produces praecode-0.1.36.vsix
 ```
 
 The extension-host test (`test/extension-host.ts`) is run in a real editor:

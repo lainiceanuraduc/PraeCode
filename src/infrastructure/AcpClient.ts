@@ -54,7 +54,7 @@ export class AcpClient extends EventEmitter {
     };
     try {
       this.initialized = await rpc.request('initialize', {
-        protocolVersion: 1, clientCapabilities: {}, clientInfo: { name: 'praecode', version: '0.1.35' }
+        protocolVersion: 1, clientCapabilities: {}, clientInfo: { name: 'praecode', version: '0.1.36' }
       });
       return this.initialized;
     } catch (error) { this.dispose(); throw error; }

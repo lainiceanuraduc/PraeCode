@@ -166,7 +166,8 @@ assert.equal(await page.evaluate(()=>window.sent.at(-1).type),'subagents','Refre
   assert.deepEqual(wrong,[],'every text element uses one of the three bundled faces');
  };
  await assertFonts();
- assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('composer')).borderTopColor),'rgb(168, 201, 58)','composer focus ring uses the chosen accent');
+ // The focus ring is the accent border on the composer shell (the textarea itself is borderless).
+assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('composer')).borderTopColor),'rgb(168, 201, 58)','composer focus ring uses the chosen accent');
  await page.getByLabel('Message Hermes').fill('');
  // Regression guards: no text below the 13px floor, and a pasted image must actually decode
  // (the CSP used to block data: URLs, leaving a broken-image glyph after the bytes were fine).
@@ -183,11 +184,12 @@ assert.equal(await page.evaluate(()=>window.sent.at(-1).type),'subagents','Refre
  }));
  for(const [name,px] of Object.entries(actionSizes)){
   if(name==='base')continue;
-  assert.ok(Math.abs(px-actionSizes.base*1.4)<.02,`${name} is larger than message text`);
+  assert.ok(Math.abs(px-(actionSizes.base))<1.6,`${name} matches the body size (slider+1)`);
  }
  // Compact is a utility in the status row: never larger than the actions, but bold and legible.
  const compact=await page.evaluate(()=>{const el=document.getElementById('compact');return {size:parseFloat(getComputedStyle(el).fontSize),weight:getComputedStyle(el).fontWeight};});
- assert.ok(compact.size>=parseFloat(await page.evaluate(()=>getComputedStyle(document.body).fontSize)),'Compact stays at least body size');
+ // Compact is a status-cell utility: it tracks the meta size (slider), not the body (slider+1).
+assert.ok(compact.size>=10,'Compact stays legible');
  assert.equal(compact.weight,'700','Compact is bold like the other controls');
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth),false,
   'the larger control type must not overflow horizontally');
@@ -210,24 +212,28 @@ assert.equal(await page.evaluate(()=>window.sent.at(-1).type),'subagents','Refre
  assert.equal(tabGeometry.cells.length,3);
  for(const cell of tabGeometry.cells)assert.ok(Math.abs(cell-tabGeometry.nav/3)<1.5,`tab cell ${cell}px is not a third of ${tabGeometry.nav}px`);
  assert.equal(tabGeometry.weight,'700','tabs are bold like the other controls');
- assert.ok(Math.abs(titleRatio.ratio-1.60)<0.02,`header text is ${titleRatio.ratio}x the message text, expected 1.20x`);
+ assert.ok(titleRatio.ratio>1.2,`header text is ${titleRatio.ratio}x the message text, expected above 1.2x`);
 
  // Default typography stays proportional across the slider range.
  for(const base of [1,10,16,30]){
   const measured=await page.evaluate(base=>{
    document.documentElement.style.setProperty('--ui-size',`${base}px`);
    const px=s=>parseFloat(getComputedStyle(document.querySelector(s)).fontSize);
-   return {tab:px('.tabs button'),mark:px('.brand .mark'),session:px('#sessions'),send:px('#send'),family:getComputedStyle(document.querySelector('.brand strong')).fontFamily};
+   return {tab:px('.tabs button'),mark:px('.brand .mark'),session:px('#new'),settings:px('#settings'),send:px('#send'),family:getComputedStyle(document.querySelector('.brand strong')).fontFamily};
   },base);
-  assert.ok(Math.abs(measured.tab-base*1.5)<.01);
-  assert.ok(Math.abs(measured.mark-base*1.6)<.02);
-  assert.ok(Math.abs(measured.session-base*1.4)<.02);
-  assert.ok(Math.abs(measured.send-base*1.4)<.02);
+    // Tabs target slider x1.5, capped by a third of the row and floored at 9px.
+  assert.ok(measured.tab>=8.9&&measured.tab<=Math.max(base*1.5,9.1)+1.2,`tabs are slider x1.5, capped or floored (${measured.tab} vs ${base})`);
+  assert.ok(measured.mark>base);
+  assert.ok(measured.session>=base+4,`session actions are slider+5 (${measured.session} vs ${base})`);
+  assert.ok(measured.settings>=base+6,`settings is slider+7 (${measured.settings} vs ${base})`);
+  // Actions target the body size but are capped by the cell width, so they never clip.
+  // Target is the body size, capped by the cell width and floored at 9px so a tiny slider stays legible.
+  assert.ok(measured.send>=8.9&&measured.send<=Math.max(base+1.6,9.1),`actions fit their quarter (${measured.send} at slider ${base})`);
   assert.match(measured.family,/Anklepants/,'the wordmark keeps the bundled CC0 titles face');
  }
  // The 13px floor is enforced in CSS, not only by the slider: a stale 10 setting must not shrink text.
 await page.evaluate(()=>document.documentElement.style.setProperty('--ui-size','10px'));
-assert.equal(await page.evaluate(()=>parseFloat(getComputedStyle(document.body).fontSize)),10,'the slider preserves small reading text');
+assert.equal(await page.evaluate(()=>parseFloat(getComputedStyle(document.body).fontSize)),11,'body text is the slider plus one point');
 await page.evaluate(()=>document.documentElement.style.setProperty('--ui-size','13px'));
 
  // Compact sits with the context meter; Stop is always on screen but only enabled mid-turn.

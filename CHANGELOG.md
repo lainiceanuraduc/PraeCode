@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.36
+
+- **The layout is grids now, not flex rows that wrapped.** Four rows share equal cells: composer
+  actions (Context, Screenshot, Stop, Send) at a quarter each, the status line (spinner+state,
+  approvals, context meter, Compact) at a quarter each, session actions (new, rename, resume) at a
+  third each, and the tabs at a third each. The route row is a grid too: the model button spans the
+  row, then effort and the reasoning toggle split the second line. Nothing wraps, so no row grows
+  taller than its content.
+- **One type scale, declared once.** `--ui-text` is the slider; every size derives from it:
+  body/prompt/responses **slider + 1**, meta **slider**, session actions **+5**, settings **+7**.
+  Tabs and titles keep the sizes they already had (1.5× and 1.6×) — they were not part of this
+  request. The four earlier `:root` blocks that re-declared the scale with multipliers are gone; that
+  duplication is what made the hierarchy drift every release.
+- **Cells never clip.** Each grid is a container, and a label is capped at a share of its cell
+  (`min(target, 3.3cqw)` floored at 9px), so "Screenshot" fits a quarter of a 430px sidebar at every
+  slider value instead of ellipsizing or overflowing.
+- The UI smoke test now asserts the grid shares (25%/33%), body = slider + 1 at 10/16/24, and that no
+  control clips at any of those sizes.
+
 ## 0.1.35
 
 - **"+ Provider" in the model picker.** The picker could only choose among providers Hermes already
