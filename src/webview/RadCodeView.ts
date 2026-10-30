@@ -128,6 +128,9 @@ export class RadCodeView {
   const active=this.state.sessions.find(s=>s.id===this.state.activeId);
   if(!active)return;
   this.picker.open(active.models??[],active.info?`${active.info.provider}:${active.info.model}`:'',active.id);
+  // Provider facts are read when the picker opens: one request, and only for providers that publish a
+  // model list (Mistral does; the others fall back to the ACP catalogue alone).
+  if((active.info?.provider??'').toLowerCase().startsWith('mistral'))this.post({type:'modelFacts'});
  }
  private tab(name:string):void{
   for(const section of ['chat','agents','features']){element(section).hidden=section!==name;const b=element('tab-'+section);b.setAttribute('aria-selected',String(section===name));b.tabIndex=section===name?0:-1;}
@@ -185,6 +188,7 @@ export class RadCodeView {
   else if(message.type==='openModelPicker')this.openModelPicker();
   else if(message.type==='favorites')this.picker.setFavorites(message.ids);
   else if(message.type==='modelDetails')this.picker.setDetails(message.details);
+  else if(message.type==='modelFacts')this.picker.setModelFacts(message.models);
   else if(message.type==='profile'){this.features.setFiles(message.files);element('profile-home').textContent=message.home??'HERMES_HOME';}
   else if(message.type==='subagents')this.agents.delegation(message);
   else if(message.type==='profileSaved')this.features.saved(message.id,message.savedAt);

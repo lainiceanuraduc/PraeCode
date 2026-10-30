@@ -1,10 +1,10 @@
 # PraeCode — Hermes Agent for VS Code
 
-[![Version](https://img.shields.io/badge/version-0.1.32-e5b93c)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.34-e5b93c)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-e5b93c)](LICENSE)
 [![GitHub](https://img.shields.io/badge/source-GitHub-e5b93c)](https://github.com/lainiceanuraduc/PraeCode)
 
-A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.32.
+A VSCodium / VS Code extension for [Hermes Agent](https://hermes-agent.nousresearch.com/docs) — v0.1.34.
 It talks to your existing Hermes installation over **ACP** (Agent Client Protocol) — no API keys are
 stored in VS Code, and no Hermes configuration is modified.
 
@@ -56,6 +56,27 @@ Extension Development Host.
 > `hermes acp --check` prints `Hermes ACP check OK`; the view still renders and tells you what is
 > missing.
 
+
+## What's new in 0.1.34
+
+- **Three fonts, three roles, all CC0 1.0:** Anklepants for titles, Not Jam Mono Clean 13 for tabs and
+  buttons, Kubasta for prompts, responses, reasoning and tables (reasoning and tables in italic).
+- Every licence was verified from the delivered font file rather than the host site's badge; five
+  candidates were rejected on that evidence (personal-use-only, no-webfont, No-Derivatives,
+  ShareAlike, and one that shipped no font file at all).
+- Icons and a few punctuation marks fall back to the monospace stack, because these faces carry
+  126–902 glyphs — documented rather than hidden.
+
+## What's new in 0.1.33
+
+- **Mistral effort ladders are read from the API.** A rejected `reasoning_effort` names the accepted
+  list, so one tiny request per model discovers it; the result is cached for a week and read by both
+  the wire and the selector. The shipped table is only the offline seed.
+- **The table was wrong where it mattered:** `mistral-large-4` takes `low/medium/high` (not
+  `none/high`), and `deepseek-v4-1-flash-1017` takes `none/low/high/xhigh/max`.
+- **The picker shows provider facts per row:** context window, reasoning/vision/FIM chips, the exact
+  ladder with a *verified* badge, and Labs models blocked with the reason (they answer 403 without an
+  organisation opt-in). Embeddings, OCR, TTS and transcription models no longer appear.
 
 ## What's new in 0.1.32
 
@@ -140,25 +161,41 @@ Extension Development Host.
 | Prompt | The composer is resizable from a grab bar above it (drag, or arrow keys) and keeps its height between reloads |
 | Subagents | Everything delegation touches: Hermes' own `delegate_task` policy (concurrent children, spawn depth, child timeout, orchestrator, child model), every active child run and its recent history read from Hermes' database, plus this extension's named worker presets (provider, model, effort, instructions), isolated sessions per run, parallel-run cap and "Use result" into the main chat |
 | Context | Files attached to a message: the editor you are looking at is offered as a one-click chip, `＋ Context` picks more from the workspace, each chip opens or removes the file. The editor host reads the bytes at send time, so you always send the current file; the transcript shows names, not file bodies. Workspace-trust enforcement |
-| Appearance | `radcode.accent` picks the highlight colour (yellow default, 8 palettes), `radcode.fontSize`/`lineHeight`/`compact` restyle the view. All text uses Public Pixel. Changes apply live |
+| Appearance | `radcode.accent` picks the highlight colour (yellow default, 8 palettes), `radcode.fontSize`/`lineHeight`/`compact` restyle the view. Titles use Anklepants, controls Not Jam Mono Clean 13, reading text Kubasta. Changes apply live |
 | Profile | "Features" tab reads the profile on disk: `SOUL.md`, `memories/USER.md`, `memories/MEMORY.md`, each editable with an explicit Save |
 | Diagnostics | "PraeCode Hermes" output channel with secret redaction |
 
-## Bundled font, and why it changed
+## Bundled fonts, and why they changed
 
-All extension UI text (including messages, code, controls and profile editors) uses
-**Public Pixel** by GGBotNet, licensed **CC0 1.0 (public domain)**: `media/fonts/PublicPixel.ttf`, with
-provenance in `media/fonts/PublicPixel.LICENSE.txt`. CC0 permits redistribution inside a published
-extension. Bold and italic are synthesized from the bundled regular face; sizes retain the UI hierarchy.
-The retired `radcode.fontFamily` and `radcode.fontFamilyCustom` settings no longer affect the view.
-Native editor UI and dialogs remain controlled by VS Code. Unsupported glyphs use a fallback font.
+Three faces, one per role, each **CC0 1.0 (public domain)** and each verified from the shipped file
+rather than from the host site's badge:
 
-Until 0.1.22 that face was *Valve* by Typodermic Fonts, which ships under a **Desktop-only** EULA.
+| Role | Face | Author | Evidence |
+|---|---|---|---|
+| Titles (headings, session title, wordmark) | **Anklepants** | Ray Larabie | name table: *"Released in 2024 under CC0 license. No rights reserved."* |
+| Tabs and buttons | **Not Jam Mono Clean 13** | Not Jam | archive ships the full CC0 1.0 legal text (`Licence.txt`); name table `CC0` |
+| Prompts, responses, reasoning, tables | **Kubasta** | Kai Kubasta | author's pages record CC0 1.0; name table says "Open Font License" — both permit bundling, the discrepancy is recorded in `media/fonts/Kubasta.LICENSE.txt` |
+
+Provenance for each is in `media/fonts/*.LICENSE.txt`. CC0 permits redistribution inside a published
+extension. None of the three ships an italic cut, so reasoning and tables use the browser's synthesised
+oblique. They carry 126–902 glyphs, so the UI's geometric icons (`▶ ■ ⚙ ＋ ✎ ↶ ↗ ★`) and a few
+punctuation marks fall back to the monospace stack declared after each family — a per-character
+fallback, not a load failure. The retired `radcode.fontFamily`/`fontFamilyCustom` settings no longer
+affect the view, and native editor UI stays under VS Code's control.
+
+**Rejected during selection** (all failed the embedding test, despite their host badges): *Valve*
+(Typodermic, desktop-only EULA — shipped until 0.1.22, removed in 0.1.23), *BLACK CAPS* (G369, name
+table says "free for personal use, email for commercial"), *Quicksilver Sea* (FontStruct Commercial
+EULA: no redistribution, no webfont), *Web Serveroff* (CC BY-ND: no derivatives), *fs hakumo*
+(CC BY-SA: ShareAlike), and *nullptr* (CC0 but ships only a `.xcf` and a bitmap atlas — no font file).
+
+Until 0.1.22 the UI face was *Valve* by Typodermic Fonts, which ships under a **Desktop-only** EULA.
 That agreement forbids embedding the font software in "an app, game, desktop application, plug-in,
 extension, mod, or other software", so shipping it inside a VSIX was a licence violation. **0.1.23**
 removed those `.otf` files (and the unused Pixelzone face) and switched to Public Pixel; **0.1.24** is
-the rename to PraeCode. The 0.1.21 and 0.1.22 builds that contained Valve have been removed from the
-Marketplace, so no downloadable package carries it.
+the rename to PraeCode; **0.1.34** replaced Public Pixel with the three faces above. The 0.1.21 and
+0.1.22 builds that contained Valve have been removed from the Marketplace, so no downloadable package
+carries it.
 
 ## Requirements
 
@@ -297,7 +334,7 @@ npm test              # unit tests (transport, ACP, presets, sessions, control)
 npm run test:python   # Hermes-side helper tests (needs Hermes' Python)
 npm run test:ui       # Playwright: rendering, CSP, sanitization, capability select, a11y labels
 npm run test:live     # real ACP handshake + session + effort read-back
-npm run package       # produces praecode-0.1.32.vsix
+npm run package       # produces praecode-0.1.34.vsix
 ```
 
 The extension-host test (`test/extension-host.ts`) is run in a real editor:

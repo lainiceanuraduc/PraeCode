@@ -1,0 +1,13 @@
+Anklepants — https://www.fontspace.com/anklepants-font-f133403
+Designed by Ray Larabie (Typodermic Fonts).
+
+Licence: CC0 1.0 Universal (public domain dedication)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+The font's own name table states: "Released in 2024 under CC0 license. No rights
+reserved." Verified from the shipped .otf (name ID 0), not from the host site's badge.
+
+CC0 permits redistribution inside a published extension, modification, subsetting and
+commercial use, with no attribution required. Attribution is given here anyway.
+
+Used for: titles (headings, session title, wordmark).

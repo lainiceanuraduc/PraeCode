@@ -29,6 +29,8 @@ const base=(over:Partial<SessionControl>={}):SessionControl=>({
   contextSource:'',catalogName:'',capabilities:{values:[],note:''}}),
  sessions:async()=>[],
  subagents:async()=>({running:[],recent:[]}),
+ mistralModels:async()=>({count:0,models:[]}),
+ mistralDiscover:async(model:string)=>({model,levels:null,note:'',source:'unavailable'}),
  ...over,
 });
 

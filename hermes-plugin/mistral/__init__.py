@@ -25,9 +25,9 @@ from providers import register_provider
 from providers.base import ProviderProfile
 
 try:  # package import when installed into ~/.hermes/plugins/model-providers/mistral
-    from .mistral_ladders import efforts_for_model
+    from .mistral_ladders import efforts_for_model, is_labs_model, static_ladder
 except ImportError:  # loaded as a bare module by a test harness
-    from mistral_ladders import efforts_for_model
+    from mistral_ladders import efforts_for_model, is_labs_model, static_ladder
 
 #: Fallback for an id that has never been verified: the two-level ladder Mistral's own models use.
 MISTRAL_EFFORTS: Tuple[str, ...] = ("none", "high")
@@ -37,7 +37,13 @@ class MistralProfile(ProviderProfile):
     """Per-model ``reasoning_effort``; never forces thinking on, never sends it where unsupported."""
 
     def supported_reasoning_efforts(self, model: Optional[str] = None) -> tuple[str, ...]:
-        """Empty tuple = the model accepts no reasoning parameters at all (Hermes omits the field)."""
+        """Empty tuple = the model accepts no reasoning parameters at all (Hermes omits the field).
+
+        The ladder is the one discovered from the API (cached), falling back to the shipped seed, so
+        the wire and the editor's selector read the same answer.
+        """
+        if is_labs_model(model):
+            return ()                              # gated: every request is a 403, so send nothing
         efforts = efforts_for_model(model)
         return MISTRAL_EFFORTS if efforts is None else efforts
 
@@ -50,6 +56,8 @@ class MistralProfile(ProviderProfile):
         model: Optional[str] = None, **context: Any,
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         # The wire must match what this exact model accepts, not what the family used to accept.
+        if is_labs_model(model):
+            return {}, {}                          # gated model: a reasoning field only adds a 403
         efforts = efforts_for_model(model)
         supported = MISTRAL_EFFORTS if efforts is None else efforts
         if not supported:

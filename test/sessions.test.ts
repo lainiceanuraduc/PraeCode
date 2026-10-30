@@ -30,6 +30,8 @@ const control:SessionControl={
  modelInfo:async()=>({provider:'p',providerLabel:'P',model:'m',baseUrl:'',lab:'',context:null,contextSource:'',catalogName:'',capabilities:{values:[],note:''}}),
  sessions:async()=>[],
  subagents:async()=>({running:[],recent:[]}),
+ mistralModels:async()=>({count:0,models:[]}),
+ mistralDiscover:async(model:string)=>({model,levels:null,note:'',source:'unavailable'}),
  rename:async(id:string,title:string)=>({sessionId:id,title})
 };
 

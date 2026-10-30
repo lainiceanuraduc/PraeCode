@@ -307,6 +307,22 @@ export class RadCodeExtension implements vscode.Disposable {
   this.view.post({type:'modelDetails',details});
  }
 
+ /**
+  * Provider facts for the picker. Today that means Mistral's own `/v1/models`: one request gives the
+  * context window, the lab, the capability flags and which models are Labs-gated, and the cached
+  * discovery supplies each model's exact effort ladder.
+  */
+ private async readModelFacts():Promise<void>{
+  try{
+   const {models}=await this.controller.control.mistralModels();
+   this.view.post({type:'modelFacts',models});
+  }catch(error){
+   // A provider without a model list is not an error the user must act on; the picker still works.
+   this.output.appendLine(`Model facts unavailable: ${String(error)}`);
+   this.view.post({type:'modelFacts',models:[]});
+  }
+ }
+
  /** The profile directory, resolved the same way the runtime resolves it. */
  private profileHome():string{
   if(this.profile)return this.profile;
@@ -445,6 +461,7 @@ export class RadCodeExtension implements vscode.Disposable {
    favoritesRequest:()=>this.postFavorites(),
    favorite:m=>this.setFavorite(m),
    modelInfo:m=>this.readModelInfo(m),
+   modelFacts:()=>this.readModelFacts(),
    useModel:(m,id)=>{
     if(typeof m.value!=='string')throw new Error('Choose a model first');
     return this.controller.setModel(id(),m.value);

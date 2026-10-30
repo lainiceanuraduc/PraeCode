@@ -26,6 +26,12 @@ export interface SessionControl {
  sessions(cwd: string): Promise<{id:string;title:string;cwd:string;messages:number;updatedAt:string}[]>;
  /** Delegation policy plus every persisted child run Hermes knows about for this workspace. */
  subagents(cwd: string): Promise<import('../domain/Delegation').DelegationSnapshot>;
+ /** Chat-capable models the Mistral account can use, with context, lab, capabilities and ladder. */
+ mistralModels(): Promise<{count:number;models:{id:string;name:string;description:string;lab:string;
+  context:number|null;aliases:string[];capabilities:Record<string,boolean>;labsGated:boolean;
+  efforts:string[]|null;effortsSource:'discovered'|'seed'|'unknown'}[]}>;
+ /** Probe one Mistral model for its exact reasoning ladder and cache the answer. */
+ mistralDiscover(model:string): Promise<{model:string;levels:string[]|null;note:string;source:string}>;
  /** Facts about a model the session is not running on yet: lab, context window, effort ladder. */
  modelInfo(provider: string, model: string, baseUrl?: string): Promise<ModelDetails>;
 }
@@ -40,6 +46,10 @@ export class HermesControl implements SessionControl {
  compact(sessionId: string, focus = ''): Promise<{sessionId:string;compressed:boolean;messages?:number;summary?:string}> { return this.invoke({action:'compact',sessionId,focus}); }
  capabilities(provider: string, model: string, baseUrl = ''): Promise<EffortCapabilities> { return this.invoke({action:'catalog',provider,model,baseUrl}); }
  modelInfo(provider: string, model: string, baseUrl = ''): Promise<ModelDetails> { return this.invoke({action:'modelinfo',provider,model,baseUrl}); }
+ mistralModels(): Promise<{count:number;models:{id:string;name:string;description:string;lab:string;
+  context:number|null;aliases:string[];capabilities:Record<string,boolean>;labsGated:boolean;
+  efforts:string[]|null;effortsSource:'discovered'|'seed'|'unknown'}[]}> { return this.invoke({action:'mistral_models'}); }
+ mistralDiscover(model:string): Promise<{model:string;levels:string[]|null;note:string;source:string}> { return this.invoke({action:'mistral_discover',model}); }
  subagents(cwd: string): Promise<import('../domain/Delegation').DelegationSnapshot> { return this.invoke({action:'subagents',cwd}); }
  sessions(cwd: string): Promise<{id:string;title:string;cwd:string;messages:number;updatedAt:string}[]> { return this.invoke({action:'sessions',cwd}); }
  private async command(): Promise<string[]> {

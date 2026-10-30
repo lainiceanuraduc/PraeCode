@@ -94,9 +94,19 @@ in the view header, so check it before shipping.
 
 ## Font licences
 
-Only one font ships: `media/fonts/PublicPixel.ttf`, by GGBotNet, **CC0 1.0 (public domain)** —
-redistribution inside a published extension is permitted, and provenance is recorded in
-`media/fonts/PublicPixel.LICENSE.txt`.
+Three fonts ship, each **CC0 1.0 (public domain)**, each verified from the delivered file rather than
+from the host site's badge:
+
+| File | Role | Evidence |
+|---|---|---|
+| `media/fonts/Anklepants-Regular.otf` | titles | name table: "Released in 2024 under CC0 license. No rights reserved." |
+| `media/fonts/NotJamMonoClean13-Regular.ttf` | tabs and buttons | archive ships the full CC0 1.0 legal text; name table `CC0` |
+| `media/fonts/Kubasta-Regular.ttf` | prompts, responses, reasoning, tables | author's pages record CC0 1.0; name table says "Open Font License" (both permit bundling — discrepancy recorded) |
+
+Provenance is in `media/fonts/*.LICENSE.txt`. Check the shipped archive, not the listing: five fonts
+were rejected during selection because their badges lied — BLACK CAPS ("free for personal use"),
+Quicksilver Sea (FontStruct Commercial EULA, no webfont), Web Serveroff (CC BY-ND), fs hakumo
+(CC BY-SA) and nullptr (CC0 but no font file at all).
 
 This section used to say "Pixelzone and Valve ship under their own licences from 1001fonts". That was
 wrong in the way that matters: the host site labelled Valve "free for commercial use", but the package

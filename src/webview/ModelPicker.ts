@@ -7,7 +7,8 @@
  * in the all-models list adds, starring in the favorites list removes.
  */
 import {element} from './dom';
-import {groupModels, providerOf, toggleFavorite} from '../domain/ModelCatalog';
+import {capabilityChips, groupModels, modelBlockedReason, providerOf, toggleFavorite} from '../domain/ModelCatalog';
+import type {MistralModelFacts} from '../domain/ModelCatalog';
 import type {ProviderGroup} from '../domain/ModelCatalog';
 import type {ModelDetailsView} from './types';
 
@@ -18,6 +19,8 @@ export class ModelPicker {
  private selected='';
  private sessionId='';
  private requestId='';
+ /** Facts from the provider's own model list, keyed by bare model id (Mistral only, for now). */
+ private facts=new Map<string,MistralModelFacts>();
 
  constructor(private post:(message:any)=>void){
   element('picker-close').onclick=()=>this.close();
@@ -54,6 +57,25 @@ export class ModelPicker {
  close():void{if(this.dialog().open)this.dialog().close();}
  private dialog():HTMLDialogElement{return element<HTMLDialogElement>('model-picker');}
  private useButton():HTMLButtonElement{return element<HTMLButtonElement>('picker-use');}
+
+ /**
+  * Provider facts for the rows: context window, lab, capability chips and whether the model is
+  * blocked (a Labs model 403s without an organisation opt-in). Keyed by bare id so an alias row and
+  * its canonical id share one entry.
+  */
+ setModelFacts(models:MistralModelFacts[]|undefined):void{
+  this.facts=new Map((models??[]).map(m=>[m.id,m]));
+  this.renderAll();this.renderFavorites();
+ }
+
+ /** The facts for a picker row, following the provider's alias list when the row is an alias. */
+ private factsFor(id:string):MistralModelFacts|undefined{
+  const bare=providerOf(id).model;
+  const direct=this.facts.get(bare);
+  if(direct)return direct;
+  for(const facts of this.facts.values())if(facts.aliases?.includes(bare))return facts;
+  return undefined;
+ }
 
  /** The host owns the favorites list; adopt exactly what it stored and re-render both lists. */
  setFavorites(ids:string[]):void{this.favorites=Array.isArray(ids)?ids:[];this.renderFavorites();this.renderAll();}
@@ -95,10 +117,33 @@ export class ModelPicker {
   const name=document.createElement('span');name.className='model-name';name.textContent=label;
   const meta=document.createElement('span');meta.className='model-meta';meta.textContent=sub;
   button.append(name,meta);
+  // Provider facts, when the host fetched them: a context window, capability chips, and the reason a
+  // row cannot be used (a Labs model without organisation access).
+  const facts=this.factsFor(id);
+  if(facts){
+   const row=document.createElement('span');row.className='model-facts';
+   if(facts.context)row.append(this.chip(`${Math.round(facts.context/1000)}k ctx`,'ctx'));
+   for(const chip of capabilityChips(facts))row.append(this.chip(chip,chip.startsWith('Labs')?'blocked':'cap'));
+   if(facts.efforts){
+    row.append(this.chip(`effort: ${facts.efforts.length?facts.efforts.join('/'):'none'}`,'effort'));
+    // Say where the ladder came from: a probe of this account, or the shipped table.
+    if(facts.effortsSource==='discovered')row.append(this.chip('verified','effort verified'));
+   }
+   if(row.children.length)button.append(row);
+   const blocked=modelBlockedReason(facts);
+   if(blocked){item.classList.add('blocked');button.disabled=true;button.title=blocked;}
+  }
   button.onclick=():void=>{this.selected=id;mount(id);this.renderAll();this.renderFavorites();this.renderDetails(undefined);
    this.useButton().disabled=false;this.post({type:'modelInfo',provider:providerOf(id).provider,model:providerOf(id).model});};
   item.append(this.star(id,filled,label),button);
   return item;
+ }
+
+ private chip(text:string,kind:string):HTMLSpanElement{
+  const span=document.createElement('span');
+  span.className=`fact ${kind}`;
+  span.textContent=text;
+  return span;
  }
 
  private renderAll():void{

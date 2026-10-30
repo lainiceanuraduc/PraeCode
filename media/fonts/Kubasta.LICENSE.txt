@@ -1,0 +1,21 @@
+Kubasta — https://zichy.itch.io/kubasta
+Designed by Kai Kubasta (studio zichy), built with FontStruct.
+FontStruct source: https://fontstruct.com/fontstructions/show/1526716/kubasta
+
+Licence: CC0 1.0 Universal (public domain dedication)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+The author's itch.io listing records "Asset license: Creative Commons Zero v1.0
+Universal", the FontStruct page links creativecommons.org/publicdomain/zero/1.0/, and the
+author's description says "Licensed under CC0 (Public Domain)".
+
+Disclosure: the font's own name table (name ID 13) says "Open Font License" instead. Both
+licences permit bundling the font inside a published application, so either reading is
+safe for this use; the author's pages are treated as authoritative and CC0 is recorded
+here. This discrepancy is stated rather than smoothed over.
+
+CC0 permits redistribution inside a published extension, modification, subsetting and
+commercial use, with no attribution required. Attribution is given here anyway.
+
+Used for: prompts, responses, reasoning and tables (regular, plus a synthesised italic
+for reasoning and tables — the family ships a single Regular weight).

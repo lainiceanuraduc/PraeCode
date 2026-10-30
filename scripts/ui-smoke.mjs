@@ -137,17 +137,35 @@ assert.equal(await page.evaluate(()=>window.sent.at(-1).type),'subagents','Refre
  assert.equal(await page.getByLabel('Message Hermes').inputValue(),'typed while failing','a newer draft is never overwritten');
  // Accent is the yellow highlight, not the editor's light-blue focus/link colour.
  assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()),'#a8c93a','the settings accent is applied');
- // Legacy font settings in these fixtures must no longer override the bundled family.
- const assertPixel=async()=>{
+ // Three bundled faces, three roles. Every text element must resolve to one of them, and each
+ // family file must actually load (a present @font-face rule proves nothing on its own).
+ const FONTS={titles:'Anklepants',controls:'Not Jam Mono Clean 13',reading:'Kubasta'};
+ const assertFonts=async()=>{
   await page.evaluate(()=>document.fonts.ready);
-  assert.equal(await page.evaluate(()=>[...document.fonts].some(f=>f.family==='Public Pixel'&&f.status==='loaded')),true,'the bundled font file loaded');
-  const wrong=await page.evaluate(()=>[...document.querySelectorAll('body,body *')]
+  const loaded=await page.evaluate(()=>[...document.fonts].filter(f=>f.status==='loaded').map(f=>f.family));
+  for(const family of Object.values(FONTS))
+   assert.ok(loaded.includes(family),`the bundled ${family} file loaded`);
+  // Role check: titles, controls and reading text each use their own face.
+  const roles=await page.evaluate(()=>({
+   title:getComputedStyle(document.querySelector('.brand strong')).fontFamily,
+   tab:getComputedStyle(document.querySelector('.tabs button')).fontFamily,
+   send:getComputedStyle(document.getElementById('send')).fontFamily,
+   body:getComputedStyle(document.querySelector('#transcript .message .body')??document.body).fontFamily,
+   prompt:getComputedStyle(document.getElementById('message')).fontFamily,
+  }));
+  assert.match(roles.title,/Anklepants/,'titles use Anklepants');
+  assert.match(roles.tab,/Not Jam Mono Clean 13/,'tabs use Not Jam Mono Clean 13');
+  assert.match(roles.send,/Not Jam Mono Clean 13/,'buttons use Not Jam Mono Clean 13');
+  assert.match(roles.body,/Kubasta/,'responses use Kubasta');
+  assert.match(roles.prompt,/Kubasta/,'the prompt uses Kubasta');
+  // Nothing may fall back to a generic family: every text element names a bundled face.
+  const wrong=await page.evaluate(fonts=>[...document.querySelectorAll('body,body *')]
    .filter(el=>el.textContent?.trim()||el.matches('input,textarea,select'))
-   .filter(el=>!getComputedStyle(el).fontFamily.startsWith('"Public Pixel"'))
-   .map(el=>`${el.tagName}#${el.id}: ${getComputedStyle(el).fontFamily}`));
-  assert.deepEqual(wrong,[],'every text element uses Public Pixel');
+   .filter(el=>!fonts.some(f=>getComputedStyle(el).fontFamily.includes(f)))
+   .map(el=>`${el.tagName}#${el.id}: ${getComputedStyle(el).fontFamily}`),Object.values(FONTS));
+  assert.deepEqual(wrong,[],'every text element uses one of the three bundled faces');
  };
- await assertPixel();
+ await assertFonts();
  assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('composer')).borderTopColor),'rgb(168, 201, 58)','composer focus ring uses the chosen accent');
  await page.getByLabel('Message Hermes').fill('');
  // Regression guards: no text below the 13px floor, and a pasted image must actually decode
@@ -205,7 +223,7 @@ assert.equal(await page.evaluate(()=>window.sent.at(-1).type),'subagents','Refre
   assert.ok(Math.abs(measured.mark-base*1.6)<.02);
   assert.ok(Math.abs(measured.session-base*1.4)<.02);
   assert.ok(Math.abs(measured.send-base*1.4)<.02);
-  assert.match(measured.family,/Public Pixel/,'the wordmark keeps the bundled CC0 display face');
+  assert.match(measured.family,/Anklepants/,'the wordmark keeps the bundled CC0 titles face');
  }
  // The 13px floor is enforced in CSS, not only by the slider: a stale 10 setting must not shrink text.
 await page.evaluate(()=>document.documentElement.style.setProperty('--ui-size','10px'));
@@ -239,6 +257,7 @@ await page.evaluate(()=>document.documentElement.style.setProperty('--ui-size','
 await page.evaluate(()=>window.postMessage({type:'state',sessions:[{id:'s',title:'Test conversation',kind:'chat',status:'idle',messages:[],
  models:[{modelId:'mistral:mistral-large-4',name:'Mistral \u00b7 mistral-large-4',description:'Provider: Mistral'},
          {modelId:'mistral:codestral',name:'Mistral \u00b7 codestral',description:'Provider: Mistral'},
+         {modelId:'mistral:labs-leanstral-1-5',name:'Mistral \u00b7 labs-leanstral-1-5',description:'Provider: Mistral'},
          {modelId:'ollama-cloud:qwen3:32b',name:'Ollama Cloud \u00b7 qwen3:32b',description:'Provider: Ollama Cloud'}],
  info:{model:'codestral',provider:'mistral',effort:'high',capabilities:{values:['none','high'],note:'n'}}}],
  activeId:'s',presets:[],recent:[],appearance:{accent:'lime',fontFamily:'monospace',fontSize:13,lineHeight:0,compact:false}},'*'));
@@ -247,7 +266,7 @@ await page.locator('#model').click();
 await page.locator('#model-picker[open]').waitFor();
 assert.equal(await page.locator('#favorite-list .model-row').count(),0,'no favorites yet');
 assert.equal(await page.locator('#picker-provider option').count(),2,'one row per provider, from the ACP model ids');
-assert.equal(await page.locator('#model-list .model-row').count(),2,'the selected provider lists its own models');
+assert.equal(await page.locator('#model-list .model-row').count(),3,'the selected provider lists its own models');
 // Starring under All models adds; starring again in Favorites removes.
 await page.locator('#model-list li[data-model-id="mistral:mistral-large-4"] .star').click();
 assert.deepEqual(await page.evaluate(()=>{const m=window.sent.at(-1);return {type:m.type,id:m.id,on:m.on};}),
@@ -261,6 +280,28 @@ await page.evaluate(()=>window.postMessage({type:'favorites',ids:[]},'*'));
 await page.waitForTimeout(50);
 assert.equal(await page.locator('#favorite-list .model-row').count(),0);
 // Selecting a row asks the host for that model's real details and renders them.
+// Provider facts: context, capability chips, the exact ladder, and a blocked Labs row.
+await page.evaluate(()=>window.postMessage({type:'modelFacts',models:[
+ {id:'mistral-large-4',name:'mistral-large-4',description:'Mistral Large 4.0',lab:'mistralai',context:1048576,
+  aliases:['mistral-large-4-0'],capabilities:{reasoning:true,vision:true,function_calling:true,completion_fim:false},
+  labsGated:false,efforts:['low','medium','high'],effortsSource:'discovered'},
+ {id:'codestral',name:'codestral',description:'Coding model',lab:'mistralai',context:256000,aliases:[],
+  capabilities:{reasoning:false,vision:false,function_calling:true,completion_fim:true},
+  labsGated:false,efforts:[],effortsSource:'seed'},
+ {id:'labs-leanstral-1-5',name:'labs-leanstral-1-5',description:'Labs',lab:'mistralai',context:262144,aliases:[],
+  capabilities:{reasoning:true,vision:true,function_calling:true,completion_fim:false},
+  labsGated:true,efforts:null,effortsSource:'unknown'}]},'*'));
+await page.waitForTimeout(50);
+const largeRow=page.locator('#model-list li[data-model-id="mistral:mistral-large-4"]');
+assert.match(await largeRow.textContent(),/1049k ctx/,'the context window comes from the provider');
+assert.match(await largeRow.textContent(),/reasoning/,'capability chips are shown');
+assert.match(await largeRow.textContent(),/effort: low\/medium\/high/,'the verified ladder is shown');
+
+assert.match(await largeRow.textContent(),/verified/,'a discovered ladder is marked as verified');
+const labsRow=page.locator('#model-list li[data-model-id="mistral:labs-leanstral-1-5"]');
+assert.equal(await labsRow.evaluate(el=>el.classList.contains('blocked')),true,'a Labs model is marked blocked');
+assert.equal(await labsRow.locator('.model-row').isDisabled(),true,'a Labs model cannot be selected');
+assert.match(await labsRow.locator('.model-row').getAttribute('title'),/403/,'the reason names the 403');
 await page.locator('#model-list li[data-model-id="mistral:codestral"] .model-row').click();
 assert.deepEqual(await page.evaluate(()=>{const m=window.sent.at(-1);return {type:m.type,provider:m.provider,model:m.model};}),
  {type:'modelInfo',provider:'mistral',model:'codestral'});
@@ -275,7 +316,7 @@ assert.match(details,/none, high/,'the thinking/effort ladder is shown');
 // The details pane must read as sentences, not one character per line: the value column needs width.
 const detailWidth=await page.evaluate(()=>{const dd=document.querySelector('#model-details dd');return dd?dd.clientWidth:0;});
 assert.ok(detailWidth>=200,`details values get ${detailWidth}px, expected at least 200px`);
-await assertPixel();
+await assertFonts();
 await page.locator('#picker-use').click();
 assert.deepEqual(await page.evaluate(()=>{const m=window.sent.at(-1);return {type:m.type,id:m.id,value:m.value};}),
  {type:'useModel',id:'s',value:'mistral:codestral'});
@@ -297,7 +338,7 @@ await page.evaluate(()=>window.postMessage({type:'profile',home:'/home/me/.herme
  {id:'memory',title:'Agent memory',description:'Notes.',path:'/home/me/.hermes/memories/MEMORY.md',content:'',exists:false}]},'*'));
 await page.locator('#profile-files .profile-card').first().waitFor();
 assert.equal(await page.locator('#profile-files .profile-card').count(),3,'SOUL.md and both memory files');
-await assertPixel();
+await assertFonts();
 assert.equal(await page.getByLabel('SOUL.md contents').inputValue(),'Be terse.');
 assert.equal(await page.locator('#profile-files .profile-save').first().isDisabled(),true,'Save waits for an edit');
 await page.getByLabel('SOUL.md contents').fill('Be terse and kind.');
@@ -321,13 +362,13 @@ await page.getByRole('tab',{name:'Chat',exact:true}).click();
 // Exercise rich text and code, not just the shell's inherited family.
 await page.getByLabel('Dismiss error').click();
 await page.evaluate(()=>window.postMessage({type:'state',sessions:[{id:'s',title:'Pixel typography',kind:'chat',status:'idle',
- messages:[{id:'u',role:'user',text:'Use Public Pixel everywhere.'},
+ messages:[{id:'u',role:'user',text:'Three faces, three roles.'},
  {id:'r',role:'thinking',text:'Checking typography.'},
- {id:'a',role:'assistant',text:'One family: **bold**, *italic*, and `inline code`.\n\n```ts\nconst font = "Public Pixel";\n```'}],
+ {id:'a',role:'assistant',text:'One family: **bold**, *italic*, and `inline code`.\n\n```ts\nconst font = "Kubasta";\n```'}],
  info:{model:'codestral',provider:'mistral',effort:'high',capabilities:{values:['none','high'],note:''}}}],
  activeId:'s',presets:[],recent:[],appearance:{accent:'yellow',fontSize:16,lineHeight:0,compact:false}},'*'));
 await page.locator('#transcript pre code').waitFor();
-await assertPixel();
+await assertFonts();
 assert.equal(await page.locator('#transcript em').evaluate(el=>getComputedStyle(el).fontStyle),'italic');
 assert.ok(await page.locator('#transcript strong').evaluate(el=>Number(getComputedStyle(el).fontWeight)===400));
 // Wide windows: the pixel face is wide, so text lives in a centred column instead of spanning 1900px.
@@ -350,8 +391,8 @@ for(const width of [320,430,1440]){
 await page.setViewportSize({width:430,height:900});
 // Screenshots show the shipped default size (10), which is what a new install renders.
 await page.evaluate(()=>window.postMessage({type:'state',sessions:[{id:'s',title:'Pixel typography',kind:'chat',status:'idle',
- messages:[{id:'u',role:'user',text:'Use Public Pixel everywhere.'},
- {id:'a',role:'assistant',text:'One family: **bold**, *italic*, and `inline code`.\n\n```ts\nconst font = "Public Pixel";\n```'}],
+ messages:[{id:'u',role:'user',text:'Three faces, three roles.'},
+ {id:'a',role:'assistant',text:'One family: **bold**, *italic*, and `inline code`.\n\n```ts\nconst font = "Kubasta";\n```'}],
  info:{model:'codestral',provider:'mistral',effort:'high',capabilities:{values:['none','high'],note:''},
   messages:12,context:{used:52000,limit:200000,messages:12,compactions:0,source:'stream'}},
  modes:{current:'dont_ask',available:[{id:'default',name:'Ask'},{id:'accept_edits',name:'Accept Edits'},{id:'dont_ask',name:"Don't Ask"}]},
@@ -364,5 +405,5 @@ await page.screenshot({path:'docs/ui-dark.png',fullPage:true});
  await page.addStyleTag({url:'http://radcode.test/theme.css'});
  await page.screenshot({path:'docs/ui-light.png',fullPage:true});
  assert.deepEqual(errors,[]);
- console.log('Webview smoke passed: connect, capability-aware effort, sanitized Markdown, agent form, keyboard send, approval mode select, approval cards, context meter, context attachments, composer clearing, accent + font settings, bold control/regular message hierarchy, Hermes delegation panel, image thumbnails decode, dark/light rendering.');
+ console.log('Webview smoke passed: connect, capability-aware effort, sanitized Markdown, agent form, keyboard send, approval mode select, approval cards, context meter, context attachments, composer clearing, accent + font settings, bold control/regular message hierarchy, Hermes delegation panel, Mistral provider facts, image thumbnails decode, dark/light rendering.');
 }finally{await browser.close();}

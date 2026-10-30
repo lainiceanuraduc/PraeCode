@@ -1,5 +1,45 @@
 # Changelog
 
+## 0.1.34
+
+- **Three bundled faces, one per role, all CC0 1.0.** Titles use **Anklepants** (Ray Larabie),
+  tabs and buttons use **Not Jam Mono Clean 13** (Not Jam), and prompts, responses, reasoning and
+  tables use **Kubasta** (Kai Kubasta). Reasoning and tables are italic, which the browser synthesises
+  because none of the three ships an italic cut. Public Pixel is gone.
+- **Every licence was verified from the delivered file, not the host badge**, and five candidates were
+  rejected on that evidence: BLACK CAPS (name table: "free for personal use, email for commercial"),
+  Quicksilver Sea (FontStruct Commercial EULA — no redistribution, no webfont), Web Serveroff
+  (CC BY-ND), fs hakumo (CC BY-SA), and nullptr (CC0 but ships only a `.xcf` and a bitmap atlas).
+  Provenance for the three shipped faces is in `media/fonts/*.LICENSE.txt`.
+- **The glyph gap is documented, not hidden.** These faces carry 126–902 glyphs, so the UI's
+  geometric icons (`▶ ■ ⚙ ＋ ✎ ↶ ↗ ★`) and a few punctuation marks resolve through the monospace
+  fallback declared after each family. The UI smoke test now asserts each family loads *and* that
+  titles, tabs/buttons, prompt and response each resolve to their own face.
+
+## 0.1.33
+
+- **Mistral ladders are discovered from the API, not assumed.** `GET /v1/models` never publishes the
+  per-model `reasoning_effort` list, but a rejected level names it in the 400 body — in two different
+  shapes. One tiny request per model (`max_tokens: 1`) therefore learns the exact ladder, and the
+  result is cached in `$HERMES_HOME/cache/praecode/mistral-ladders.json` for a week. **Both** the wire
+  (the bundled provider profile) and the selector (`bridge/control.py`) read the cache first and the
+  shipped table second, so they can no longer disagree. All 38 chat models discover in ~10 s.
+- **The table was wrong for the flagship models.** `mistral-large-4` / `mistral-large-4-0` accept
+  `low`/`medium`/`high` and reject `none` — the old `none,high` entry offered a level that 400s and hid
+  two that work. `deepseek-v4-1-flash-1017` (absent) accepts `none/low/high/xhigh/max`. Both now match
+  `docs.mistral.ai` and the live probe; `scripts/mistral-ladders-smoke.py` asserts the doc values.
+- **The picker shows what the provider actually publishes.** Opening it on a Mistral session issues one
+  request and renders, per row: context window, capability chips (reasoning / vision / FIM), the exact
+  effort ladder, and a **verified** badge when the ladder came from a probe rather than the table.
+  Embeddings, OCR, TTS and transcription models are filtered out by `capabilities.completion_chat`
+  (26 rows that could never complete a chat used to be selectable). `lab` is filled from `owned_by`.
+- **Labs models are blocked, not offered.** `labs-leanstral-*` answers 403 unless the organisation
+  enables Labs, so those rows are dimmed, unselectable, and say why; the profile also omits the
+  reasoning field for them instead of adding a second failure.
+- New bridge actions `mistral_models` (one request, chat-capable rows with facts) and
+  `mistral_discover` (probe one model, cache it). `npm run test:mistral` checks the docs, the refusal
+  parser, and the cache/seed precedence.
+
 ## 0.1.32
 
 - **Renaming no longer depends on the ACP connection.** A rename is a metadata edit in Hermes, not a

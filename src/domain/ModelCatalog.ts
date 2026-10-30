@@ -11,6 +11,30 @@
 export interface AcpModelRow {modelId:string;name?:string;description?:string;}
 /** One model inside a provider group; `label` is the model alone, without its provider prefix. */
 export interface ModelRow {id:string;label:string;provider:string;providerLabel:string;}
+/** Facts the picker shows for a Mistral row, read from the provider's own `/v1/models`. */
+export interface MistralModelFacts {
+ id:string;name:string;description:string;lab:string;context:number|null;aliases:string[];
+ capabilities:Record<string,boolean>;labsGated:boolean;efforts:string[]|null;
+ effortsSource:'discovered'|'seed'|'unknown';
+}
+
+/** One chip per capability the provider actually advertises; nothing is claimed by omission. */
+export function capabilityChips(facts:MistralModelFacts|undefined):string[]{
+ if(!facts)return [];
+ const chips:string[]=[];
+ if(facts.capabilities?.reasoning)chips.push('reasoning');
+ if(facts.capabilities?.vision)chips.push('vision');
+ if(facts.capabilities?.completion_fim)chips.push('FIM');
+ if(facts.labsGated)chips.push('Labs: needs org access');
+ return chips;
+}
+
+/** Why a row cannot be selected, or '' when it can. Labs models 403 without an org opt-in. */
+export function modelBlockedReason(facts:MistralModelFacts|undefined):string{
+ if(facts?.labsGated)return 'Labs model: your organisation has not enabled it, so every request returns 403';
+ return '';
+}
+
 export interface ProviderGroup {slug:string;label:string;models:ModelRow[];}
 
 /**

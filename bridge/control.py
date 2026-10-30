@@ -21,13 +21,108 @@ try:
                       / 'hermes-plugin' / 'mistral')
     if _plugin_dir not in _sys.path:
         _sys.path.insert(0, _plugin_dir)
-    from mistral_ladders import efforts_for_model as _mistral_efforts, note_for_model as _mistral_note
+    from mistral_ladders import (efforts_for_model as _mistral_efforts, note_for_model as _mistral_note,
+                                 is_labs_model as _mistral_labs, parse_refusal as _mistral_parse,
+                                 save_cache_entry as _mistral_save, static_ladder as _mistral_static,
+                                 discovered_ladder as _mistral_discovered,
+                                 PROBE_CANDIDATES as _mistral_probe_levels)
 except Exception:  # pragma: no cover - the extension always ships the table; a bare copy may not
     _mistral_efforts = None
     _mistral_note = None
+    _mistral_labs = None
+    _mistral_parse = None
+    _mistral_save = None
+    _mistral_static = None
+    _mistral_discovered = None
+    _mistral_probe_levels = ()
 
 MISTRAL_NATIVE_NOTE = ("Mistral API ladder: none or high. Mistral rejects every other level "
                        "(minimal/low/medium/xhigh/max) with HTTP 400, so they are not offered.")
+
+
+# --------------------------------------------------------------------------- Mistral discovery
+#
+# The per-model ladder is not published by `GET /v1/models`, but a rejected `reasoning_effort` names
+# the accepted list. One tiny request per model therefore discovers it, and the result is cached for
+# both the wire (the bundled provider profile) and this bridge's selector. The static table stays as
+# the offline seed only.
+
+def _mistral_key():
+    """The API key for this profile, from the environment or Hermes' own .env. Never logged."""
+    import os
+    key = str(os.environ.get('MISTRAL_API_KEY') or '').strip()
+    if key:
+        return key
+    home = os.environ.get('HERMES_HOME') or os.path.join(os.path.expanduser('~'), '.hermes')
+    try:
+        with open(os.path.join(home, '.env'), encoding='utf-8') as handle:
+            for line in handle:
+                if line.startswith('MISTRAL_API_KEY='):
+                    return line.split('=', 1)[1].strip().strip('"').strip("'")
+    except OSError:
+        pass
+    return ''
+
+
+def _mistral_post(path, key, payload, timeout=60):
+    """One HTTPS POST to api.mistral.ai; returns (status, body text). No third-party dependency."""
+    import urllib.error
+    import urllib.request
+    request = urllib.request.Request('https://api.mistral.ai/v1' + path, data=json.dumps(payload).encode(),
+                                     headers={'Authorization': f'Bearer {key}',
+                                              'Content-Type': 'application/json'})
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            return response.status, response.read().decode('utf-8', 'replace')
+    except urllib.error.HTTPError as exc:
+        return exc.code, exc.read().decode('utf-8', 'replace')
+    except Exception as exc:                       # network, DNS, timeout: unknown, never a guess
+        return 0, str(exc)
+
+
+def discover_mistral_ladder(model, key=''):
+    """`(levels, note)` for one model, probing the API; `(None, note)` when it cannot be known."""
+    if _mistral_labs is not None and _mistral_labs(model):
+        return None, 'labs_gated'
+    key = key or _mistral_key()
+    if not key:
+        return None, 'no_api_key'
+    for level in _mistral_probe_levels or ('xhigh', 'none', 'minimal', 'medium', 'low', 'max'):
+        status, body = _mistral_post('/chat/completions', key,
+                                     {'model': model, 'max_tokens': 1, 'reasoning_effort': level,
+                                      'messages': [{'role': 'user', 'content': 'hi'}]})
+        if status == 200:
+            continue                               # this model accepts `level`: try the next candidate
+        if status == 403:
+            return None, 'labs_gated'
+        if status == 400:
+            levels = _mistral_parse(body) if _mistral_parse else None
+            if levels is not None:
+                return levels, ''
+        return None, f'http_{status}'
+    # Every candidate was accepted, so the model takes the whole enum.
+    return ('none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'), ''
+
+
+def _mistral_models(key=''):
+    """`GET /v1/models` as `{id: entry}`; empty when unavailable. One request, no per-model probing."""
+    import urllib.request
+    key = key or _mistral_key()
+    if not key:
+        return {}
+    request = urllib.request.Request('https://api.mistral.ai/v1/models',
+                                     headers={'Authorization': f'Bearer {key}'})
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            payload = json.loads(response.read().decode('utf-8', 'replace'))
+    except Exception:
+        return {}
+    rows = payload.get('data') if isinstance(payload, dict) else None
+    if not isinstance(rows, list):
+        return {}
+    return {str(row.get('id')): row for row in rows if isinstance(row, dict) and row.get('id')}
+
+
 MISTRAL_UNVERIFIED_NOTE = ("This Mistral model has not been verified against the API, so no level is "
                            "offered rather than one that would fail at the provider.")
 # Ollama Cloud's OpenAI-compatible endpoint accepts these for Mistral models (verified live:
@@ -140,6 +235,8 @@ def route_efforts(provider, model, base_url=''):
     if mistral_native_route(provider, base_url):
         if _mistral_efforts is None:  # pragma: no cover - the table ships with the extension
             return MISTRAL_NATIVE_EFFORTS
+        if _mistral_labs is not None and _mistral_labs(model):
+            return ()                              # gated per organisation: every request is a 403
         return _mistral_efforts(model)
     if is_ollama_route(provider, base_url):
         # Ollama Cloud has its own route-wide ladder; Mistral models there are capped at high.
@@ -290,11 +387,15 @@ def summarize_model(provider, model, base_url='', endpoint_entry=None, catalog_e
     """
     entry = endpoint_entry if isinstance(endpoint_entry, dict) else {}
     catalog = catalog_entry if isinstance(catalog_entry, dict) else {}
-    from_endpoint = _positive_int(entry, 'context_length', 'max_input_tokens', 'context_window')
+    from_endpoint = _positive_int(entry, 'max_context_length', 'context_length', 'max_input_tokens',
+                                  'context_window')
     context = from_endpoint or _positive_int(catalog, 'context_length', 'max_input_tokens')
     return {'provider': str(provider or '')[:200], 'providerLabel': str(provider_label or '')[:120],
             'model': str(model or '')[:300], 'baseUrl': str(base_url or '')[:500],
             'lab': str(entry.get('owned_by') or catalog.get('provider') or '').strip()[:120],
+            'capabilitiesHint': {key: bool((entry.get('capabilities') or {}).get(key)) for key in
+                                 ('reasoning', 'vision', 'function_calling', 'completion_fim')}
+                                if isinstance(entry.get('capabilities'), dict) else None,
             'context': context,
             'contextSource': 'provider' if from_endpoint else ('catalog' if context else ''),
             'catalogName': str(catalog.get('name') or '')[:200],
@@ -374,6 +475,13 @@ class HermesSessionControl:
             catalog_entry = catalog.get(model) or catalog.get(model.rsplit('/', 1)[-1])
         except Exception:
             catalog_entry = None
+        # `/v1/models` publishes `owned_by` and the real context length; the shared catalog often has
+        # neither, which is why every Mistral row used to show an empty lab.
+        if mistral_native_route(provider, resolved) and model:
+            listed = await asyncio.to_thread(_mistral_models)
+            entry = listed.get(model) if isinstance(listed, dict) else None
+            if isinstance(entry, dict):
+                endpoint_entry = {**(endpoint_entry or {}), **entry}
         label = ''
         try:
             from hermes_cli.providers import get_label
@@ -482,6 +590,39 @@ class HermesSessionControl:
 
     async def execute(self, request):
         action = request.get('action')
+        if action == 'mistral_discover':
+            # Probe one model and cache the answer for both the wire and the selector.
+            model = str(request.get('model') or '')[:300]
+            if not model:
+                raise ValueError('A model is required')
+            levels, note = discover_mistral_ladder(model)
+            if levels is not None and _mistral_save is not None:
+                _mistral_save(model, levels, note)
+            return {'model': model, 'levels': list(levels) if levels is not None else None,
+                    'note': note,
+                    'source': 'discovered' if levels is not None else 'unavailable'}
+        if action == 'mistral_models':
+            # One request: what the account can actually chat with, with the facts the picker needs.
+            rows = _mistral_models()
+            listed = []
+            for model_id, entry in sorted(rows.items()):
+                capabilities = entry.get('capabilities') or {}
+                if not capabilities.get('completion_chat'):
+                    continue                      # embeddings, OCR, TTS: not selectable models
+                ladder = _mistral_efforts(model_id) if _mistral_efforts else None
+                listed.append({'id': model_id,
+                               'name': str(entry.get('name') or model_id),
+                               'description': str(entry.get('description') or '')[:300],
+                               'lab': str(entry.get('owned_by') or ''),
+                               'context': entry.get('max_context_length'),
+                               'aliases': [str(a) for a in (entry.get('aliases') or [])][:8],
+                               'capabilities': {key: bool(capabilities.get(key)) for key in
+                                                ('reasoning', 'vision', 'function_calling', 'completion_fim')},
+                               'labsGated': bool(_mistral_labs and _mistral_labs(model_id)),
+                               'efforts': list(ladder) if ladder is not None else None,
+                               'effortsSource': ('discovered' if _mistral_discovered and _mistral_discovered(model_id)
+                                                 else ('seed' if ladder is not None else 'unknown'))})
+            return {'models': listed, 'count': len(listed)}
         if action == 'subagents':
             return self._subagents(str(request.get('cwd') or ''))
         if action == 'sessions':
