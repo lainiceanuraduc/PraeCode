@@ -2,6 +2,7 @@ node_modules/
 out/
 dist/
 *.vsix
+docs/_*.png
 __pycache__/
 *.pyc
 docs/extension-host-result.json

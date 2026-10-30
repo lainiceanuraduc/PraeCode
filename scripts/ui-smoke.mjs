@@ -110,7 +110,6 @@ assert.match(await page.locator('#delegation-running .run-card').first().textCon
 assert.match(await page.locator('#delegation-recent .run-card').first().textContent(),/done/);
 assert.match(await page.locator('#delegation-recent .run-card').first().textContent(),/62 msgs · 34 tools/);
 await page.evaluate(()=>{document.getElementById('agents').scrollTop=0;});
-await page.locator('#agents').screenshot({path:'docs/_subagents.png'});
 await page.locator('#refresh-subagents').click();
 assert.equal(await page.evaluate(()=>window.sent.at(-1).type),'subagents','Refresh asks Hermes again');
  await page.getByRole('tab',{name:'Chat',exact:true}).click();
