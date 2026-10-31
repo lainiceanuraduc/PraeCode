@@ -9,7 +9,7 @@ model selection, attachments, approval prompts, saved conversations and worker s
 VS Code / VSCodium. **Hermes performs the underlying agent work**, including tool execution and
 conversation storage; PraeCode connects to it over ACP (Agent Client Protocol).
 
-This is an experimental, mostly AI-written hobby project, not an independently audited product.
+This is an experimental, mostly AI-written project, not an independently audited product.
 It can ask Hermes to run commands and modify files. Start in a disposable repository with approvals
 set to **Ask**, and keep backups or version control.
 
