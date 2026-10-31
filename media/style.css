@@ -127,8 +127,10 @@ body.compact .message{margin:9px 0}body.compact #composer textarea{min-height:52
  min-height:calc(var(--font-session-action) * 1.9);display:grid;place-items:center;min-width:0}
 
 .route{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;padding:2px 10px 4px;border-bottom:1px solid var(--border)}
-.route .model{grid-column:1/-1;width:100%;font-size:var(--font-body-size);line-height:1.2;padding:4px 6px;
- text-align:left;white-space:normal;overflow-wrap:break-word;align-self:stretch}
+/* The model button is the row's subject, not a full-width bar: sized to its own label at
+ * slider+3, so a short model id does not stretch into an empty stripe across the panel. */
+.route .model{grid-column:1/-1;justify-self:start;width:auto;max-width:100%;font-size:var(--font-model);
+ line-height:1.25;padding:.35em .6em;text-align:left;white-space:normal;overflow-wrap:break-word;align-self:start}
 .route-controls{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px;align-items:center;min-width:0}
 .route-controls label{font-size:var(--font-body-size);white-space:nowrap;margin:0}
 .route-controls select{font-size:var(--font-body-size);min-width:0;width:100%}
@@ -254,13 +256,13 @@ dialog,.approval-details{max-height:80vh;overflow:auto}
  --font-tab:calc(var(--ui-text) * 1.5);
  --font-session-action:calc(var(--ui-text) + 5px);
  --font-settings:calc(var(--ui-text) + 7px);
+ --font-model:calc(var(--ui-text) + 3px);
  --font-display:var(--font-titles);
 }
 /* Roles: titles use Anklepants, controls use Not Jam Mono Clean 13, reading text uses Kubasta. */
 .message-time,.brand .subtitle{font-size:var(--font-min)}
 .message pre,.message code{font-size:var(--font-body-size)}
 .message pre code{font-size:inherit}
-#composer textarea,.route .model,
 /* ---- Resizable prompt -----------------------------------------------------------
  * The grab bar sits above the textarea and owns the drag: the textarea keeps resize:none so the
  * browser's own corner handle cannot fight the host-remembered height. */
@@ -411,7 +413,8 @@ textarea,input:not([type=range]):not([type=checkbox]),#composer textarea,.profil
 .tabs button{font-size:clamp(9px, min(var(--font-tab), 5cqw), 40px)}
 .session-actions button{font-size:var(--font-session-action)}
 #settings{font-size:var(--font-settings)}
-.route .model,.route-controls label,.route-controls select,.route-controls .thinking-label{font-size:var(--font-body-size)}
+.route-controls label,.route-controls select,.route-controls .thinking-label{font-size:var(--font-body-size)}
+.route .model{font-size:var(--font-model)}
 .composer-actions button{font-size:clamp(9px, min(var(--font-body-size), 3.3cqw), 40px)}
 
 /* ---- Composer focus: the accent marks the active prompt ------------------------- */

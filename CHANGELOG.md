@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.37
+
+- **The model button is `slider + 3` and sized to its label** (`justify-self:start`, `width:auto`), so a
+  short model id no longer stretches into an empty stripe across the panel. A dangling
+  `#composer textarea,.route .model,` selector fragment left over from the layout rewrite was removed.
+
 ## 0.1.36
 
 - **The layout is grids now, not flex rows that wrapped.** Four rows share equal cells: composer
@@ -16,6 +22,9 @@
 - **Cells never clip.** Each grid is a container, and a label is capped at a share of its cell
   (`min(target, 3.3cqw)` floored at 9px), so "Screenshot" fits a quarter of a 430px sidebar at every
   slider value instead of ellipsizing or overflowing.
+- **The model button is `slider + 3` and sized to its label** (`justify-self:start`, `width:auto`), so a
+  short model id no longer stretches into an empty stripe across the panel. A dangling
+  `#composer textarea,.route .model,` selector fragment left over from the layout rewrite was removed.
 - The UI smoke test now asserts the grid shares (25%/33%), body = slider + 1 at 10/16/24, and that no
   control clips at any of those sizes.
 

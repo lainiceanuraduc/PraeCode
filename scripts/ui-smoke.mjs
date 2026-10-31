@@ -183,6 +183,7 @@ assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('c
  }));
  for(const [name,px] of Object.entries(actionSizes)){
   if(name==='base')continue;
+  if(name==='model'){assert.ok(px>=actionSizes.base+2&&px<=actionSizes.base+4,`the model button is slider+3 (${px} vs ${actionSizes.base})`);continue;}
   assert.ok(Math.abs(px-(actionSizes.base))<1.6,`${name} matches the body size (slider+1)`);
  }
  // Compact is a utility in the status row: never larger than the actions, but bold and legible.
