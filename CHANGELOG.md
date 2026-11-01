@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.38
+
+- Add Mammouth AI to the existing provider form: accept its root or `/v1` URL, normalize chat to
+  `https://api.mammouth.ai/v1`, and discover models from `/public/models` without forwarding the key.
+- Save the catalog as declared Hermes models and use `chat_completions` explicitly. New ACP sessions
+  can list the models without probing `/v1/models`; Save again to refresh the imported catalog.
+- Exclude recognizable embedding/image/audio-generation model names from Mammouth's mixed catalog.
+  This name filter does not establish per-model tool, vision or reasoning support.
+- Label public catalog success as discovery only, not API-key/credit/chat verification. Document setup
+  and API-credit usage. No authenticated Mammouth chat/tool turn has been verified.
+- Add bridge regression tests covering routing, credential boundaries, saved ACP catalog, failed
+  refresh preservation, generic endpoints and malformed responses; extend the UI smoke assertion.
+
 ## 0.1.37
 
 - **The model button is `slider + 3` and sized to its label** (`justify-self:start`, `width:auto`), so a

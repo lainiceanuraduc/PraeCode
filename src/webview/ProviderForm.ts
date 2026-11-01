@@ -93,11 +93,13 @@ export class ProviderForm {
  }
 
  /** The host's reply to a Test: models found, or the endpoint's own error. */
- tested(result:{ok:boolean;models?:string[];count?:number;error?:string}):void{
+ tested(result:{ok:boolean;models?:string[];count?:number;error?:string;catalogOnly?:boolean}):void{
   this.setBusy(false);
   if(result.ok){
    const names=(result.models??[]).slice(0,4).join(', ');
-   this.note(`Endpoint answered: ${result.count??0} model${result.count===1?'':'s'}${names?` (${names}${(result.count??0)>4?'…':''})`:''}.`,'ok');
+   this.note(result.catalogOnly
+    ? `Public catalog: ${result.count??0} chat candidates. API key, credits and chat/tool access are not verified. Save, then open a new conversation. API usage consumes Mammouth credits.`
+    : `Endpoint answered: ${result.count??0} model${result.count===1?'':'s'}${names?` (${names}${(result.count??0)>4?'…':''})`:''}.`,'ok');
   }else{
    this.note(`Endpoint did not answer: ${result.error??'unknown error'}`,'error');
   }

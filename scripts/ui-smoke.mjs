@@ -341,6 +341,9 @@ assert.deepEqual(await page.evaluate(()=>{const m=window.sent.at(-1);return {typ
 await page.evaluate(()=>window.postMessage({type:'providerTest',result:{ok:true,models:['lfm3:latest','smollm2:360m'],count:2}},'*'));
 await page.waitForTimeout(50);
 assert.match(await page.locator('#provider-note').textContent(),/Endpoint answered: 2 models/);
+await page.evaluate(()=>window.postMessage({type:'providerTest',result:{ok:true,models:['gpt-4.1'],count:1,catalogOnly:true}},'*'));
+await page.waitForTimeout(50);
+assert.match(await page.locator('#provider-note').textContent(),/Public catalog.*API key.*not verified/,'Mammouth discovery does not claim authentication succeeded');
 await page.locator('#provider-save').click();
 assert.deepEqual(await page.evaluate(()=>{const m=window.sent.at(-1);return {type:m.type,id:m.id,baseUrl:m.baseUrl,model:m.defaultModel};}),
  {type:'providerSave',id:'ollama-local',baseUrl:'http://localhost:11434/v1',model:'lfm3:latest'},'a valid draft is sent');

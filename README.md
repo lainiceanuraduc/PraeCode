@@ -1,6 +1,6 @@
 # PraeCode — Hermes Agent for VS Code
 
-[![Version](https://img.shields.io/badge/version-0.1.37-e5b93c)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.38-e5b93c)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-e5b93c)](LICENSE)
 [![GitHub](https://img.shields.io/badge/source-GitHub-e5b93c)](https://github.com/lainiceanuraduc/PraeCode)
 
@@ -47,10 +47,10 @@ code --install-extension lainiceanuraduc.praecode
 ```
 
 **VSCodium or manual installation:** use *Extensions → … → Install from VSIX* with
-`praecode-0.1.37.vsix`, or:
+`praecode-0.1.38.vsix`, or:
 
 ```bash
-codium --install-extension ./praecode-0.1.37.vsix
+codium --install-extension ./praecode-0.1.38.vsix
 ```
 
 **From source:** run `npm install && npm run compile`, then press **F5** to launch an Extension
@@ -158,6 +158,33 @@ Provider compatibility depends on the installed Hermes version, model, endpoint 
 In particular, adding a local OpenAI-compatible endpoint is not a guarantee that its authentication,
 reasoning or tool-calling behavior is supported. No comprehensive provider/platform matrix is certified.
 
+## Mammouth AI
+
+In the model picker, choose **+ Provider** and enter:
+
+- **Provider id:** `mammouth`
+- **Display name:** `Mammouth AI`
+- **Base URL:** `https://api.mammouth.ai` or `https://api.mammouth.ai/v1`
+- **API key:** your Mammouth API key, not a web-session cookie
+- **Default model:** optional; a blank field uses `mammouth-recommended` if the catalog lists it,
+  otherwise its first chat candidate.
+
+Choose **Test**, then **Save**, and **open a new conversation**. Root URLs are normalized to `/v1`
+for chat. Model discovery uses Mammouth's separate `/public/models` endpoint **without sending your
+key**. Save imports those IDs as declared models in Hermes and pins the provider to Chat Completions,
+so new ACP processes do not depend on an undocumented `/v1/models` endpoint or a Responses API.
+Save again to refresh the imported catalog; no separate provider plugin is needed.
+
+The public catalog includes non-chat models without a type field. PraeCode excludes recognizable
+embedding/image/audio-generation names; this is a conservative name filter, **not per-model
+verification of tool calling, vision or reasoning levels**. Test checks public discovery only: it
+does not validate your key, balance or chat access. Chat consumes Mammouth **API credits**, not the
+web app's message allowance. See Mammouth's [API quick start](https://info.mammouth.ai/docs/api-quick-start/)
+and [catalog instructions](https://info.mammouth.ai/docs/openclaw/).
+
+For this integration, public discovery was exercised live and save/catalog behavior was tested with
+a temporary profile. **An authenticated Mammouth chat/tool turn has not been verified.**
+
 ## Settings
 
 | Setting | Default | Purpose |
@@ -195,9 +222,14 @@ reviewed results but did not personally write most of the code. This disclosure 
 of safety nor a substitute for reviewing the implementation.
 
 Development has included unit tests, Python bridge tests, Playwright UI smoke tests and selected
-live ACP/provider probes. The 0.1.37 development run reported **47 passing unit tests and a passing
-UI smoke suite**. These are developer-run checks, not independent verification; this documentation
-revision does not claim a new end-to-end test run.
+live ACP/provider probes. For 0.1.38, compilation, **47 unit tests**, the UI smoke suite and **7
+Mammouth bridge tests** passed. Public Mammouth discovery and a real temporary-profile save followed
+by a fresh-process ACP catalog read also passed. These are developer-run checks, not independent
+verification; no authenticated Mammouth chat/tool turn was exercised.
+
+The full Python suite currently has **10 failing tests**, also reproduced unchanged at the previous
+commit (44 tests before this change, 51 after). These are existing Mistral expectations, not passing
+coverage. The new Mammouth tests add no failures; the broader suite is **not green**.
 
 A handshake demonstrates connectivity, not safe file editing. A fixture-based UI test demonstrates
 behavior under its supplied state, not reliable recovery from every real database. Neither establishes
@@ -219,7 +251,7 @@ npm test              # unit tests
 npm run test:python   # bridge tests; requires the Hermes Python environment
 npm run test:ui       # Playwright UI smoke tests; requires its Chromium installation
 npm run test:live     # live ACP probe; requires a configured Hermes installation
-npm run package       # builds praecode-0.1.37.vsix
+npm run package       # builds praecode-0.1.38.vsix
 ```
 
 Live checks can create sessions or contact providers. Inspect scripts and use a test profile/workspace

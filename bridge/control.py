@@ -166,6 +166,23 @@ def _host(base_url):
         return ''
 
 
+def mammouth_route(base_url):
+    """Only the documented HTTPS API root; never redirect a lookalike host or custom path."""
+    try:
+        parsed = urlsplit(str(base_url or '').strip())
+        return (parsed.scheme == 'https' and parsed.hostname == 'api.mammouth.ai'
+                and parsed.port in (None, 443) and not parsed.username and not parsed.password
+                and not parsed.query and not parsed.fragment
+                and parsed.path.rstrip('/') in ('', '/v1'))
+    except ValueError:
+        return False
+
+
+def provider_base_url(base_url):
+    base = str(base_url or '').strip().rstrip('/')
+    return 'https://api.mammouth.ai/v1' if mammouth_route(base) else base
+
+
 def is_ollama_route(provider, base_url=''):
     host = _host(base_url)
     return 'ollama' in str(provider or '').lower() or host == 'ollama.com' or host.endswith('.ollama.com') \
@@ -512,7 +529,7 @@ class HermesSessionControl:
         provider_id = str(request.get('id') or '').strip().lower()
         if not re.fullmatch(r'[a-z0-9][a-z0-9._-]{0,39}', provider_id or ''):
             raise ValueError('Provider id must be lowercase letters, digits, dots or hyphens (max 40)')
-        base_url = str(request.get('baseUrl') or '').strip().rstrip('/')
+        base_url = provider_base_url(request.get('baseUrl'))
         if not re.match(r'^https?://', base_url):
             raise ValueError('Base URL must start with http:// or https://')
         label = str(request.get('label') or provider_id).strip()[:60]
@@ -544,17 +561,32 @@ class HermesSessionControl:
             entry['model'] = default_model
         if key_env:
             entry['key_env'] = key_env
+        # Hermes' generic discovery uses <chat base>/models. Persist Mammouth's separate public
+        # catalog as declared models so new ACP processes can populate their own model selector.
+        models, warning = [], ''
+        mammouth = mammouth_route(base_url)
+        if mammouth:
+            entry.update({'api_mode': 'chat_completions', 'discover_models': False})
+            try:
+                models = self._provider_models(base_url)
+                if not models:
+                    raise RuntimeError('Mammouth catalog returned no chat candidates')
+                entry['models'] = models[:200]
+                if not default_model:
+                    default_model = 'mammouth-recommended' if 'mammouth-recommended' in models else models[0]
+                    entry.update({'model': default_model, 'default_model': default_model})
+            except Exception as exc:
+                warning = f'{exc}. Supply a default model or Save again to refresh the Mammouth catalog.'
         providers[provider_id] = {**(providers.get(provider_id) or {}), **entry}
         config['providers'] = providers
         save_config(config, merge_existing=True)
 
-        # Probe the endpoint once so the picker can list its models immediately. A failure is a
-        # warning, not an error: the provider is already saved and may simply be offline right now.
-        models, warning = [], ''
-        try:
-            models = self._provider_models(base_url, api_key)
-        except Exception as exc:
-            warning = f'Saved, but the endpoint did not answer: {exc}'
+        # Generic endpoints keep their post-save probe; failure does not undo a saved provider.
+        if not mammouth:
+            try:
+                models = self._provider_models(base_url, api_key)
+            except Exception as exc:
+                warning = f'Saved, but the endpoint did not answer: {exc}'
         return {'id': provider_id, 'label': label, 'baseUrl': base_url,
                 'defaultModel': default_model, 'hasKey': bool(api_key),
                 'models': models[:200], 'warning': warning}
@@ -563,17 +595,25 @@ class HermesSessionControl:
         """`GET <base>/models` → model ids; raises with the endpoint's own status on failure."""
         import urllib.error
         import urllib.request
-        request = urllib.request.Request(base_url.rstrip('/') + '/models',
-                                         headers={'Authorization': f'Bearer {api_key}'} if api_key else {})
+        mammouth = mammouth_route(base_url)
+        url = 'https://api.mammouth.ai/public/models' if mammouth else base_url.rstrip('/') + '/models'
+        # The catalog is public. Never send the user's chat credential to it.
+        request = urllib.request.Request(url, headers={'User-Agent': 'PraeCode', **(
+            {'Authorization': f'Bearer {api_key}'} if api_key and not mammouth else {})})
         try:
             with urllib.request.urlopen(request, timeout=15) as response:
                 payload = json.loads(response.read().decode('utf-8', 'replace'))
         except urllib.error.HTTPError as exc:
-            raise RuntimeError(f'HTTP {exc.code} from {base_url}/models') from exc
+            raise RuntimeError(f'HTTP {exc.code} from {url}') from exc
         rows = payload.get('data') if isinstance(payload, dict) else None
         if not isinstance(rows, list):
             raise RuntimeError('the endpoint did not return a model list')
-        return [str(row.get('id')) for row in rows if isinstance(row, dict) and row.get('id')]
+        models = [str(row.get('id')) for row in rows if isinstance(row, dict) and row.get('id')]
+        if mammouth:
+            # The public catalog mixes chat, embeddings and image generation without a type field.
+            models = [mid for mid in models if not any(part in mid.lower() for part in
+                      ('embedding', 'image', 'nano-banana', 'whisper', 'tts', 'dall-e', 'flux', 'stable-diffusion'))]
+        return list(dict.fromkeys(models))
 
     def _subagents(self, cwd):
         """Everything Hermes knows about delegation for this workspace.
@@ -716,7 +756,8 @@ class HermesSessionControl:
                 raise ValueError('Base URL must start with http:// or https://')
             try:
                 models = self._provider_models(base_url, str(request.get('apiKey') or '').strip())
-                return {'ok': True, 'models': models[:200], 'count': len(models)}
+                return {'ok': True, 'models': models[:200], 'count': len(models),
+                        'catalogOnly': mammouth_route(base_url)}
             except Exception as exc:
                 return {'ok': False, 'error': str(exc)}
         if action == 'subagents':

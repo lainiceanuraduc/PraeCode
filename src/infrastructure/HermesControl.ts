@@ -36,7 +36,7 @@ export interface SessionControl {
  saveProvider(draft:{id:string;label:string;baseUrl:string;apiKey:string;defaultModel:string}):
   Promise<import('../domain/ProviderDraft').ProviderSaveResult>;
  /** Probe an endpoint without writing anything. */
- testProvider(baseUrl:string,apiKey:string): Promise<{ok:boolean;models?:string[];count?:number;error?:string}>;
+ testProvider(baseUrl:string,apiKey:string): Promise<{ok:boolean;models?:string[];count?:number;error?:string;catalogOnly?:boolean}>;
  /** Facts about a model the session is not running on yet: lab, context window, effort ladder. */
  modelInfo(provider: string, model: string, baseUrl?: string): Promise<ModelDetails>;
 }
@@ -57,7 +57,7 @@ export class HermesControl implements SessionControl {
  mistralDiscover(model:string): Promise<{model:string;levels:string[]|null;note:string;source:string}> { return this.invoke({action:'mistral_discover',model}); }
  saveProvider(draft:{id:string;label:string;baseUrl:string;apiKey:string;defaultModel:string}):
   Promise<import('../domain/ProviderDraft').ProviderSaveResult> { return this.invoke({action:'provider_save',...draft}); }
- testProvider(baseUrl:string,apiKey:string): Promise<{ok:boolean;models?:string[];count?:number;error?:string}> {
+ testProvider(baseUrl:string,apiKey:string): Promise<{ok:boolean;models?:string[];count?:number;error?:string;catalogOnly?:boolean}> {
   return this.invoke({action:'provider_test',baseUrl,apiKey});
  }
  subagents(cwd: string): Promise<import('../domain/Delegation').DelegationSnapshot> { return this.invoke({action:'subagents',cwd}); }
