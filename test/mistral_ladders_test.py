@@ -22,7 +22,9 @@ def catalog(model, provider='mistral', base=''):
 
 class LadderTableTest(unittest.TestCase):
     def test_two_level_family(self):
-        for model in ('mistral-large-4', 'mistral-medium-latest', 'mistral-small-latest',
+        # Large 4 is its own ladder: it rejects `none` and accepts `medium`.
+        self.assertEqual(ladders.efforts_for_model('mistral-large-4'), ('low', 'medium', 'high'))
+        for model in ('mistral-medium-latest', 'mistral-small-latest',
                       'magistral-medium-latest', 'mistral-vibe-cli-latest'):
             self.assertEqual(ladders.efforts_for_model(model), ('none', 'high'), model)
 
@@ -42,14 +44,14 @@ class LadderTableTest(unittest.TestCase):
 
     def test_large_latest_is_large_3_and_differs_from_large_4(self):
         self.assertEqual(ladders.efforts_for_model('mistral-large-latest'), ())
-        self.assertEqual(ladders.efforts_for_model('mistral-large-4'), ('none', 'high'))
+        self.assertEqual(ladders.efforts_for_model('mistral-large-4'), ('low', 'medium', 'high'))
 
     def test_unknown_id_is_none_not_empty(self):
         self.assertIsNone(ladders.efforts_for_model('mistral-large-5'))
         self.assertIsNone(ladders.efforts_for_model(''))
 
     def test_vendor_prefix_is_stripped(self):
-        self.assertEqual(ladders.efforts_for_model('mistralai/mistral-large-4'), ('none', 'high'))
+        self.assertEqual(ladders.efforts_for_model('mistralai/mistral-large-4'), ('low', 'medium', 'high'))
 
 
 class CatalogPerModelTest(unittest.TestCase):
@@ -98,13 +100,17 @@ class PluginWireTest(unittest.TestCase):
             self.assertEqual(self.extras(model, effort='none'), {}, model)
             self.assertEqual(self.extras(model, enabled=False), {}, model)
 
-    def test_two_level_model_sends_only_none_or_high(self):
+    def test_large_4_sends_its_three_levels_and_clamps_the_rest(self):
+        # Verified against the installed transport: Large 4 accepts low/medium/high and nothing else.
         self.assertEqual(self.extras('mistral-large-4', effort='high'), {'reasoning_effort': 'high'})
-        # Hermes' clamp never silently disables reasoning: a request for an unavailable low level
-        # lands on the nearest *enabled* level (high), not on "none".
-        self.assertEqual(self.extras('mistral-large-4', effort='low'), {'reasoning_effort': 'high'})
-        # An explicit disable is honoured, because "none" is a real level on this model.
-        self.assertEqual(self.extras('mistral-large-4', enabled=False), {'reasoning_effort': 'none'})
+        self.assertEqual(self.extras('mistral-large-4', effort='medium'), {'reasoning_effort': 'medium'})
+        self.assertEqual(self.extras('mistral-large-4', effort='low'), {'reasoning_effort': 'low'})
+        # `none` is not a level here, so it lands on this model's floor instead of being sent raw.
+        self.assertEqual(self.extras('mistral-large-4', effort='none'), {'reasoning_effort': 'low'})
+        self.assertEqual(self.extras('mistral-large-4', effort='xhigh'), {'reasoning_effort': 'high'})
+        self.assertEqual(self.extras('mistral-large-4', effort='max'), {'reasoning_effort': 'high'})
+        # The field cannot express "off" for this model, so an explicit disable drops it entirely.
+        self.assertEqual(self.extras('mistral-large-4', enabled=False), {})
 
     def test_glm_never_receives_none(self):
         # 'none' is not a level on this route, so it lands on the model's floor (low) rather than
@@ -116,4 +122,4 @@ class PluginWireTest(unittest.TestCase):
     def test_capability_declaration_matches_the_table(self):
         self.assertEqual(self.profile.supported_reasoning_efforts('ministral-8b-latest'), ())
         self.assertEqual(self.profile.supported_reasoning_efforts('zai-glm-5-3'), ('low', 'high', 'max'))
-        self.assertEqual(self.profile.supported_reasoning_efforts('mistral-large-4'), ('none', 'high'))
+        self.assertEqual(self.profile.supported_reasoning_efforts('mistral-large-4'), ('low', 'medium', 'high'))

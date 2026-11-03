@@ -1,3 +1,4 @@
+import type {ChangeSummary} from '../domain/Changes';
 import type {AgentPreset} from '../domain/PresetRepository';
 import type {ConversationSession} from '../application/SessionController';
 import type {ActiveEditorContext} from '../domain/Attachments';
@@ -34,4 +35,5 @@ export interface ProfileFileView {id:string;title:string;description:string;path
 export interface ViewState {
  sessions:ConversationSession[];activeId:string;presets:AgentPreset[];recent:any[];
  maxWorkers?:number;editor?:ActiveEditorContext;appearance?:Appearance;
+ changes?:ChangeSummary[];changesNotice?:string;
 }

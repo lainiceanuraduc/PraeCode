@@ -10,7 +10,7 @@ import * as vscode from 'vscode';
 import path from 'node:path';
 import {stat,readFile} from 'node:fs/promises';
 import {sniffImage} from './media';
-import {Attachment,attachmentBudgetError,ActiveEditorContext,MAX_ATTACHMENTS} from '../domain/Attachments';
+import {Attachment,attachmentBudgetError,ActiveEditorContext,MAX_ATTACHMENTS,secretFileReason} from '../domain/Attachments';
 import {ImageAttachment,IMAGE_MIME,MAX_IMAGES,base64Bytes,imageBudgetError} from '../domain/Images';
 
  /** The editor the user is looking at, or undefined when it is not a readable workspace file. */
@@ -19,8 +19,10 @@ export function editorContext():ActiveEditorContext|undefined{
   if(!editor||editor.document.uri.scheme!=='file'||editor.document.isUntitled)return undefined;
   // Output channels, notebooks and diffs are not files the model should be handed implicitly.
   if(editor.document.uri.path.endsWith('.git'))return undefined;
-  return {path:editor.document.uri.fsPath,name:vscode.workspace.asRelativePath(editor.document.uri),
-          line:editor.selection.active.line+1};
+  const name=vscode.workspace.asRelativePath(editor.document.uri);
+  // A credential file is never offered as context, even implicitly by having focus.
+  if(secretFileReason(name))return undefined;
+  return {path:editor.document.uri.fsPath,name,line:editor.selection.active.line+1};
  }
  /**
   * Resolve a webview attachment request. Paths are re-validated here: absolute, a regular file, and
@@ -34,6 +36,10 @@ async function oneAttachment(request:unknown):Promise<Attachment>{
   if(!folder||folder.uri.scheme!=='file')throw new Error(`${path.basename(r.path)} is outside the workspace and cannot be attached`);
   const info=await stat(r.path).catch(()=>undefined);
   if(!info?.isFile())throw new Error(`${path.basename(r.path)} is not a file`);
+  // The webview is untrusted and the contents leave the machine in the prompt, so the filter is
+  // enforced here as well as in the picker that hides these files.
+  const secret=secretFileReason(vscode.workspace.asRelativePath(uri));
+  if(secret)throw new Error(`${path.basename(r.path)} cannot be attached: ${secret}`);
   const line=Number.isInteger(r.line)&&(r.line as number)>0?(r.line as number):undefined;
   return {path:r.path,name:vscode.workspace.asRelativePath(uri),size:info.size,line};
  }

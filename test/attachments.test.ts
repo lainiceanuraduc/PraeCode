@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {EventEmitter} from 'node:events';
-import {MAX_ATTACHMENTS,attachmentBudgetError,attachmentLabel,composePrompt} from '../src/domain/Attachments';
+import {MAX_ATTACHMENTS,attachmentBudgetError,attachmentLabel,composePrompt,secretFileReason} from '../src/domain/Attachments';
 import {SessionController} from '../src/application/SessionController';
 import {SessionControl} from '../src/infrastructure/HermesControl';
 
@@ -66,4 +66,12 @@ test('budget and labels: count, per-file size and total are enforced',()=>{
  assert.equal(attachmentLabel({name:'a.ts',line:7}),'a.ts:7');
  assert.equal(attachmentLabel({name:'a.ts'}),'a.ts');
  assert.equal(composePrompt('q',[],[]),'q\n');
+});
+
+test('credential files are never attachable, but templates are',()=>{
+ for(const denied of ['.env','.env.local','.env.production','sub/.env','id_rsa','sub/id_ed25519',
+  'server.pem','tls.key','store.p12','credentials.json','secrets.yaml','.npmrc','.netrc','.git/config','.ssh/id_rsa'])
+  assert.ok(secretFileReason(denied),`${denied} must be refused`);
+ for(const allowed of ['.env.example','.env.sample','.env.template','src/env.ts','README.md','keyboard.tsx','auth.ts'])
+  assert.equal(secretFileReason(allowed),undefined,`${allowed} must stay attachable`);
 });

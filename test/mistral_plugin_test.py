@@ -38,18 +38,22 @@ class MistralWireTest(unittest.TestCase):
         )
         return built.get('reasoning_effort'), built.get('extra_body')
 
-    def test_declares_only_the_two_supported_levels(self):
-        self.assertEqual(list(self.profile.supported_reasoning_efforts('mistral-large-4')), ['none', 'high'])
+    def test_declares_only_the_supported_levels(self):
+        self.assertEqual(list(self.profile.supported_reasoning_efforts('mistral-large-4')),
+                         ['low', 'medium', 'high'])
 
     def test_sends_top_level_reasoning_effort_and_clamps_everything_else(self):
-        for requested in ('none', 'high', 'minimal', 'low', 'medium', 'xhigh', 'max', 'ultra'):
+        expected = {'none': 'low', 'minimal': 'low', 'low': 'low', 'medium': 'medium',
+                    'high': 'high', 'xhigh': 'high', 'max': 'high', 'ultra': 'high'}
+        for requested, level in expected.items():
             effort, extra = self.kwargs(requested)
-            self.assertEqual(effort, 'none' if requested == 'none' else 'high', requested)
+            self.assertEqual(effort, level, requested)
             self.assertFalse(extra, 'Mistral must not receive a nested reasoning object')
 
-    def test_unset_effort_omits_the_field_and_disable_sends_none(self):
+    def test_unset_effort_and_disable_both_omit_the_field(self):
         self.assertIsNone(self.kwargs(None)[0])
-        self.assertEqual(self.kwargs('high', enabled=False)[0], 'none')
+        # Large 4 has no "off" level, so a disable drops the field instead of sending one it rejects.
+        self.assertIsNone(self.kwargs('high', enabled=False)[0])
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 # PraeCode — Hermes Agent for VS Code
 
-[![Version](https://img.shields.io/badge/version-0.1.38-e5b93c)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.40-e5b93c)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-e5b93c)](LICENSE)
 [![GitHub](https://img.shields.io/badge/source-GitHub-e5b93c)](https://github.com/lainiceanuraduc/PraeCode)
 
@@ -47,10 +47,10 @@ code --install-extension lainiceanuraduc.praecode
 ```
 
 **VSCodium or manual installation:** use *Extensions → … → Install from VSIX* with
-`praecode-0.1.38.vsix`, or:
+`praecode-0.1.40.vsix`, or:
 
 ```bash
-codium --install-extension ./praecode-0.1.38.vsix
+codium --install-extension ./praecode-0.1.40.vsix
 ```
 
 **From source:** run `npm install && npm run compile`, then press **F5** to launch an Extension
@@ -185,6 +185,81 @@ and [catalog instructions](https://info.mammouth.ai/docs/openclaw/).
 For this integration, public discovery was exercised live and save/catalog behavior was tested with
 a temporary profile. **An authenticated Mammouth chat/tool turn has not been verified.**
 
+## Reviewing changes Hermes already made
+
+Under **Accept Edits** and **Don't Ask** there is no approval prompt, so an edit can land before you
+look at it. PraeCode records those edits in a **Changes** panel above the transcript:
+
+- **Review diff** opens a native editor diff (captured before ↔ proposed after) in read-only
+  `praecode-review:` documents. The recorded snapshot is not the transcript: the transcript truncates
+  tool content and replaces it with a text summary.
+- **Keep** marks the entry reviewed. It changes no files and grants no tool permission.
+- **Revert** is explicit, one file at a time, and refuses whenever the bytes on disk no longer match
+  the recorded after-image, the editor has unsaved changes for that file, or any PraeCode turn or
+  worker is running. Otherwise it writes the recorded before-image back through a temp file + rename;
+  a new file is deleted instead. Nothing is reverted automatically.
+
+What is and is not captured:
+
+| Case | Recorded | Revert |
+|---|---|---|
+| Local ACP adapter: `write_file` / `patch` (replace) | complete before and after text | yes, hash-checked |
+| Gateway: location-only edit (no diff in the event) | file text snapshot taken at the tool start, after-state read at completion | yes, only when the file changed exactly once |
+| Two writes racing on one file in the same session | recorded, but unattributed | **no** — review only |
+| Failed, cancelled or interrupted tool call | recorded as `unavailable` | **no** |
+| Multi-file V4A patch | patch text, not a file image | **no** — review only |
+| Shell/terminal edits, binary or >1 MiB files | not captured | **no** |
+| Sessions loaded from history (replay) | ignored | n/a |
+
+Limits worth knowing: this is a review journal, **not a backup and not a sandbox**. It stores up to
+100 records / 16 MiB per profile in the extension's storage (`0600`), keeps at most 2 MiB per file,
+never follows symlinks, and skips `.git`, `.ssh`, `.hermes`, `.env`, key and certificate paths. A
+revert does not rewrite Hermes conversation history, and shell edits or unsupported patches must be
+undone by you. Rollback is per file: for several edits to one file, revert newest first.
+
+For review without reverting, **Hermes: Review Changes** in the command palette lists everything and
+opens the same diff.
+
+## Security notes that apply to 0.1.40
+
+- **No credential ever follows a redirect.** Every outbound request goes through one helper that treats
+  a 3xx as a failure, so an endpoint cannot `302` the `Authorization` header to another host.
+- **Credential files are not attachable.** `.env` (except templates like `.env.example`), `.npmrc`,
+  `.pypirc`, `.netrc`, `credentials.json`, `id_rsa`-family keys, `*.pem`/`*.key`/`*.p12`/`*.pfx`,
+  `*.kdbx`, and anything under `.git`/`.ssh`/`.gnupg` are refused by the host, hidden from the picker
+  and never offered as the active-editor chip — attachment contents are sent to the model provider.
+- **Rollback verifies and writes through one descriptor.** `O_NOFOLLOW` + `ftruncate`/`write` on the
+  opened file, with an inode re-check afterwards: a symlink, a hardlink or a swapped path is refused
+  rather than followed.
+- **The Hermes launcher is data, not a command line.** The `--print-runtime-command` output is
+  validated (absolute interpreter that exists, exact `-I -c` shape, no control characters) and the
+  bridge directory is passed in the environment instead of being pasted into the Python source.
+- **The provider `.env` write is atomic**, created `0600` and renamed into place; a key containing a
+  line break is refused.
+- The webview keeps its CSP (`default-src 'none'`), sanitized Markdown and path-only attachments.
+
+## Code layout (0.1.40)
+
+```
+src/extension.ts                    activate/deactivate
+src/extension/RadCodeExtension.ts   composition root (~220 lines), implements ExtensionHost
+src/extension/host.ts               the interface commands/handlers receive
+src/extension/commands/             SessionCommands, ModelCommands, WorkspaceCommands, register()
+src/extension/handlers/             one module per webview domain + mergeHandlers (no duplicates)
+src/state/                          Recents (workspace index), publish (the state object)
+src/extension/review/               DiffDocuments (read-only diff URIs), revertGuard
+src/domain/                         rules only: limits, ladders, drafts, launcher validation
+src/application/                    SessionController
+src/infrastructure/                 ACP transport/client, Hermes control, ChangeJournal
+bridge/control.py                   dispatcher (~200 lines), one action per invocation
+bridge/discovery/                   ladders, routes, effort catalog, model facts
+bridge/provider_save/               endpoint rules, model-list probe, Hermes config write
+bridge/sessions/                    resume listing (bounded)
+bridge/delegation/                  delegation policy + child runs
+bridge/rpc/                         fenced session RPC
+bridge/net.py                       one-shot HTTP that refuses redirects
+```
+
 ## Settings
 
 | Setting | Default | Purpose |
@@ -222,10 +297,24 @@ reviewed results but did not personally write most of the code. This disclosure 
 of safety nor a substitute for reviewing the implementation.
 
 Development has included unit tests, Python bridge tests, Playwright UI smoke tests and selected
-live ACP/provider probes. For 0.1.38, compilation, **47 unit tests**, the UI smoke suite and **7
-Mammouth bridge tests** passed. Public Mammouth discovery and a real temporary-profile save followed
-by a fresh-process ACP catalog read also passed. These are developer-run checks, not independent
-verification; no authenticated Mammouth chat/tool turn was exercised.
+live ACP/provider probes. For 0.1.40: compilation is clean; **73 TypeScript tests**, the UI smoke
+suite, and **53 Python bridge tests** pass (the Python suite was red with 10 stale Mistral
+expectations before this release and is green now). Public Mammouth discovery and a real
+temporary-profile save followed by a fresh-process ACP catalog read also passed. These are
+developer-run checks, not independent verification; no authenticated Mammouth chat/tool turn was
+exercised.
+
+**The extension-host harness did not run here.** It now writes `docs/extension-host-result.json` and
+fails loudly instead of exiting 0 silently, but under this headless runner the editor window exits
+before the test host boots, so **no host-level run is claimed**. `vscode.diff` opening and the modal
+revert confirmation are therefore still unexercised end to end; their decisions (diff URIs, snapshot
+bounds, every revert refusal) are unit tested instead. Try both on a disposable file.
+
+The change-review logic is tested against synthetic and Hermes-shaped ACP payloads, and the gateway
+payload shape was confirmed from the installed Hermes source. **The editor-side diff tab
+(`vscode.diff`) and the modal revert confirmation were not exercised by an automated run** — the
+extension-host harness produces no verdict in this environment — and **no real agent-driven edit was
+reverted end to end**. Try it on a disposable file before trusting rollback.
 
 The full Python suite currently has **10 failing tests**, also reproduced unchanged at the previous
 commit (44 tests before this change, 51 after). These are existing Mistral expectations, not passing
@@ -251,7 +340,7 @@ npm test              # unit tests
 npm run test:python   # bridge tests; requires the Hermes Python environment
 npm run test:ui       # Playwright UI smoke tests; requires its Chromium installation
 npm run test:live     # live ACP probe; requires a configured Hermes installation
-npm run package       # builds praecode-0.1.38.vsix
+npm run package       # builds praecode-0.1.40.vsix
 ```
 
 Live checks can create sessions or contact providers. Inspect scripts and use a test profile/workspace

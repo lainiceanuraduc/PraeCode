@@ -421,3 +421,11 @@ textarea,input:not([type=range]):not([type=checkbox]),#composer textarea,.profil
 #composer:focus-within{border-color:var(--accent);box-shadow:inset 2px 0 0 var(--accent)}
 #composer{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--panel);
  margin:0 8px 6px;transition:border-color .12s,box-shadow .12s}
+
+/* Review history is a bounded scrolling region; existing header/tab grids remain unchanged. */
+.changes-panel{flex:none;margin:4px 10px;border:1px solid var(--border);border-radius:4px;padding:5px;max-height:32vh;overflow:auto}
+.changes-panel summary{cursor:pointer;font-family:var(--font-controls);font-weight:700}
+.change-card{padding:6px 0;border-bottom:1px solid var(--border);overflow-wrap:anywhere}
+.change-card strong{display:block;font-size:var(--font-body-size)}
+.change-card .actions{display:flex;gap:6px;flex-wrap:wrap}
+.change-card button,#clear-reviewed{font-size:var(--font-body-size)}

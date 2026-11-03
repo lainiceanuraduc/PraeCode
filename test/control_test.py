@@ -19,10 +19,10 @@ class CapabilitiesTest(unittest.TestCase):
         self.assertEqual(result['values'], [])
         self.assertIn('Unknown', result['note'])
 
-    def test_mistral_native_ladder_is_none_and_high(self):
-        """Live probe 2026-10-23: every other level returns HTTP 400 listing [high, none]."""
+    def test_mistral_native_ladder_is_low_medium_high(self):
+        """Live probe 2026-10-23: `none` is rejected; the accepted list is [high, low, medium]."""
         result = control.EffortCatalog().resolve('mistral', 'mistral-large-4')
-        self.assertEqual(result['values'], ['none', 'high'])
+        self.assertEqual(result['values'], ['low', 'medium', 'high'])
         self.assertIn('Mistral', result['note'])
 
     def test_mistral_on_ollama_cloud_uses_the_wider_cloud_ladder(self):
@@ -90,6 +90,7 @@ class RenameTest(unittest.IsolatedAsyncioTestCase):
     def test_rename_operation_is_metadata_not_a_generation_fence(self):
         # `/title` cannot be used from ACP (transient session), so rename must go through
         # session.mutate; the fenced set must not include it or a stale generation would refuse it.
-        source = (Path(__file__).parents[1] / 'bridge/control.py').read_text()
+        # The rule moved with the code: assert it in the module that owns rename now.
+        source = (Path(__file__).parents[1] / 'bridge' / 'rpc' / 'session.py').read_text()
         self.assertIn("operation='rename'", source)
         self.assertNotIn("'/title", source)

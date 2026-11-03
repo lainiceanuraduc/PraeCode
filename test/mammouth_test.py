@@ -20,7 +20,7 @@ class MammouthTest(unittest.TestCase):
                             {'id': 'gpt-image-2'}, {'id': 'gemini-2.5-flash-image'},
                             {'id': 'gpt-4.1'}, {'id': ''}]}
         for base in ('https://api.mammouth.ai', 'https://api.mammouth.ai/v1/'):
-            with self.subTest(base=base), patch('urllib.request.urlopen', return_value=io.BytesIO(json.dumps(payload).encode())) as opened:
+            with self.subTest(base=base), patch('provider_save.endpoint.open_once', return_value=io.BytesIO(json.dumps(payload).encode())) as opened:
                 models = control.HermesSessionControl()._provider_models(base, 'test-secret')
                 self.assertEqual(opened.call_args.args[0].full_url, 'https://api.mammouth.ai/public/models')
                 self.assertIsNone(opened.call_args.args[0].get_header('Authorization'))
@@ -32,7 +32,7 @@ class MammouthTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {'HERMES_HOME': home}), \
                 patch('hermes_cli.config.load_config', return_value=config), \
                 patch('hermes_cli.config.save_config') as saved, \
-                patch.object(control.HermesSessionControl, '_provider_models', return_value=['gpt-4.1']):
+                patch('provider_save.endpoint.models', return_value=['gpt-4.1']):
             result = control.HermesSessionControl()._provider_save({
                 'id': 'mammouth', 'label': 'Mammouth AI', 'baseUrl': 'https://api.mammouth.ai',
                 'apiKey': 'test-not-a-real-key', 'defaultModel': ''})
@@ -52,14 +52,14 @@ class MammouthTest(unittest.TestCase):
 
     def test_test_action_labels_public_discovery_as_not_authentication(self):
         import asyncio
-        with patch.object(control.HermesSessionControl, '_provider_models', return_value=['gpt-4.1']):
+        with patch('provider_save.endpoint.models', return_value=['gpt-4.1']):
             result = asyncio.run(control.HermesSessionControl().execute({
                 'action': 'provider_test', 'baseUrl': 'https://api.mammouth.ai'}))
         self.assertTrue(result['ok'])
         self.assertTrue(result['catalogOnly'])
 
     def test_generic_endpoint_keeps_models_path_and_authentication(self):
-        with patch('urllib.request.urlopen', return_value=io.BytesIO(b'{"data":[{"id":"local-chat"}]}')) as opened:
+        with patch('provider_save.endpoint.open_once', return_value=io.BytesIO(b'{"data":[{"id":"local-chat"}]}')) as opened:
             models = control.HermesSessionControl()._provider_models('http://localhost:11434/v1', 'test-key')
         self.assertEqual(models, ['local-chat'])
         self.assertEqual(opened.call_args.args[0].full_url, 'http://localhost:11434/v1/models')
@@ -79,7 +79,7 @@ class MammouthTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, {'HERMES_HOME': home}), \
                 patch('hermes_cli.config.load_config', return_value=config), \
                 patch('hermes_cli.config.save_config'), \
-                patch.object(control.HermesSessionControl, '_provider_models', side_effect=RuntimeError('offline')):
+                patch('provider_save.endpoint.models', side_effect=RuntimeError('offline')):
             result = control.HermesSessionControl()._provider_save({
                 'id': 'mammouth', 'baseUrl': 'https://api.mammouth.ai/v1', 'defaultModel': 'gpt-4.1'})
         self.assertIn('offline', result['warning'])
@@ -90,7 +90,7 @@ class MammouthTest(unittest.TestCase):
     def test_bad_public_catalog_is_not_reported_as_success(self):
         import asyncio
         for payload in (b'{}', b'{"data":{}}', b'not-json'):
-            with patch('urllib.request.urlopen', return_value=io.BytesIO(payload)):
+            with patch('provider_save.endpoint.open_once', return_value=io.BytesIO(payload)):
                 result = asyncio.run(control.HermesSessionControl().execute({
                     'action': 'provider_test', 'baseUrl': 'https://api.mammouth.ai/v1'}))
             self.assertFalse(result['ok'])

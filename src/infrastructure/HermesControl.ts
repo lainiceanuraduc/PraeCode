@@ -1,4 +1,6 @@
 import { spawn, execFile } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { BRIDGE_DIR_ENV, bridgePrelude, parseRuntimeCommand } from '../domain/RuntimeCommand';
 import { promisify } from 'node:util';
 import path from 'node:path';
 
@@ -62,25 +64,31 @@ export class HermesControl implements SessionControl {
  }
  subagents(cwd: string): Promise<import('../domain/Delegation').DelegationSnapshot> { return this.invoke({action:'subagents',cwd}); }
  sessions(cwd: string): Promise<{id:string;title:string;cwd:string;messages:number;updatedAt:string}[]> { return this.invoke({action:'sessions',cwd}); }
- private async command(): Promise<string[]> {
-  if(this.python) return [this.python,this.script];
+ /**
+  * The launcher to spawn, and the environment it needs.
+  *
+  * Everything Hermes prints is validated as data (`parseRuntimeCommand`); the bridge directory travels
+  * in `BRIDGE_DIR_ENV` so no path is ever interpolated into the `-c` source. With
+  * `radcode.pythonPath` set the script is executed directly, which needs neither.
+  */
+ private async command(): Promise<{argv:string[];env:Record<string,string>}> {
+  if(this.python) return {argv:[this.python,this.script],env:{}};
   const {stdout}=await promisify(execFile)(this.hermes,['--print-runtime-command','--module',path.basename(this.script,'.py')],{timeout:30_000,windowsHide:true})
    .catch((e:NodeJS.ErrnoException)=>{
     // Say what is wrong instead of surfacing "spawn ... ENOENT" from the child_process layer.
     if(e.code==='ENOENT')throw new Error(`Hermes is not installed at "${this.hermes}". Install Hermes, or set radcode.hermesPath to the hermes executable.`);
     throw e;
    });
-  const command=JSON.parse(stdout);
-  if(!Array.isArray(command)||command.length!==4||command[1]!=='-I'||command[2]!=='-c'||!command.every(x=>typeof x==='string')) throw new Error('Unsupported Hermes runtime launcher; configure radcode.pythonPath.');
-  // Use the installation-owned bootstrap, adding only this extension's trusted module directory.
-  command[3]=`import sys; sys.path.insert(0, ${JSON.stringify(path.dirname(this.script))}); `+command[3];
-  return command;
+  let printed:unknown;
+  try{printed=JSON.parse(stdout);}catch{throw new Error('Hermes printed an unreadable runtime command; set radcode.pythonPath.');}
+  const {argv}=parseRuntimeCommand(printed,p=>existsSync(p));
+  return {argv:[argv[0],argv[1],argv[2],bridgePrelude()+argv[3]],env:{[BRIDGE_DIR_ENV]:path.dirname(this.script)}};
  }
  private async invoke<T>(request: unknown): Promise<T> {
-  const command=await this.command();
+  const {argv,env}=await this.command();
   return new Promise((resolve,reject)=>{
-   const processHandle=spawn(command[0], command.slice(1), {
-    shell:false,windowsHide:true,env:{...process.env,...(this.home ? {HERMES_HOME:this.home}:{})},stdio:['pipe','pipe','pipe']
+   const processHandle=spawn(argv[0], argv.slice(1), {
+    shell:false,windowsHide:true,env:{...process.env,...env,...(this.home ? {HERMES_HOME:this.home}:{})},stdio:['pipe','pipe','pipe']
    });
    let output='', error='', settled=false;
    const finish=(failure?:Error,result?:T)=>{

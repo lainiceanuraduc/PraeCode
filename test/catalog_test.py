@@ -12,6 +12,9 @@ spec = importlib.util.spec_from_file_location('radcode_control', Path(__file__).
 control = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(control)
 
+# The catalog's OpenRouter lookup lives in the discovery package; patch it there, not on the facade.
+from discovery import routes  # noqa: E402 - importable once control.py put bridge/ on sys.path
+
 
 def resolve(provider, model, base=''):
     return control.EffortCatalog().resolve(provider, model, base)
@@ -33,14 +36,14 @@ class OllamaRouteTest(unittest.TestCase):
 
 class OpenRouterRouteTest(unittest.TestCase):
     def test_model_without_reasoning_offers_nothing(self):
-        with mock.patch.object(control, '_openrouter_capabilities',
+        with mock.patch.object(routes, 'openrouter_capabilities',
                                return_value={'supports_reasoning': False, 'supported_efforts': None, 'mandatory': False}):
             result = resolve('openrouter', 'meta-llama/llama-3.1-8b-instruct')
         self.assertEqual(result['values'], [])
         self.assertIn('does not accept reasoning', result['note'])
 
     def test_published_levels_are_used_verbatim(self):
-        with mock.patch.object(control, '_openrouter_capabilities',
+        with mock.patch.object(routes, 'openrouter_capabilities',
                                return_value={'supports_reasoning': True, 'mandatory': False,
                                              'supported_efforts': ['max', 'xhigh', 'high', 'medium', 'low', 'none']}):
             result = resolve('openrouter', 'openai/gpt-5.6-terra')
@@ -48,27 +51,27 @@ class OpenRouterRouteTest(unittest.TestCase):
         self.assertNotIn('ultra', result['values'])
 
     def test_reasoning_mandatory_drops_the_off_switch(self):
-        with mock.patch.object(control, '_openrouter_capabilities',
+        with mock.patch.object(routes, 'openrouter_capabilities',
                                return_value={'supports_reasoning': True, 'mandatory': True,
                                              'supported_efforts': ['none', 'low', 'high']}):
             result = resolve('openrouter', 'anthropic/claude-sonnet-4.5')
         self.assertEqual(result['values'], ['low', 'high'])
 
     def test_advertised_but_unlisted_levels_fall_back_to_the_compat_set(self):
-        with mock.patch.object(control, '_openrouter_capabilities',
+        with mock.patch.object(routes, 'openrouter_capabilities',
                                return_value={'supports_reasoning': True, 'supported_efforts': None, 'mandatory': False}):
             result = resolve('openrouter', 'anthropic/claude-sonnet-4.5')
         self.assertIn('high', result['values'])
         self.assertNotIn('ultra', result['values'])
 
     def test_unknown_catalog_still_offers_the_set_hermes_clamps(self):
-        with mock.patch.object(control, '_openrouter_capabilities', return_value=None):
+        with mock.patch.object(routes, 'openrouter_capabilities', return_value=None):
             result = resolve('openrouter', 'mistralai/mistral-large-2411')
         self.assertTrue(result['values'], 'a transient catalog failure must not disable the control')
         self.assertIn('clamp', result['note'])
 
     def test_openrouter_host_is_recognised_without_the_provider_name(self):
-        with mock.patch.object(control, '_openrouter_capabilities',
+        with mock.patch.object(routes, 'openrouter_capabilities',
                                return_value={'supports_reasoning': False, 'supported_efforts': None, 'mandatory': False}):
             result = resolve('custom', 'x-ai/grok-4', 'https://openrouter.ai/api/v1')
         self.assertEqual(result['values'], [])
@@ -90,14 +93,14 @@ class OpenAIRouteTest(unittest.TestCase):
 class MistralRouteTest(unittest.TestCase):
     def test_native_api_is_none_or_high_only(self):
         result = resolve('mistral', 'mistral-large-4')
-        self.assertEqual(result['values'], ['none', 'high'])
+        self.assertEqual(result['values'], ['low', 'medium', 'high'])
 
     def test_mistral_on_ollama_cloud_uses_the_cloud_ladder(self):
         result = resolve('ollama-cloud', 'mistral-large-4')
         self.assertEqual(result['values'], ['none', 'low', 'medium', 'high'])
 
     def test_mistral_through_openrouter_is_judged_by_openrouter(self):
-        with mock.patch.object(control, '_openrouter_capabilities',
+        with mock.patch.object(routes, 'openrouter_capabilities',
                                return_value={'supports_reasoning': True, 'mandatory': False,
                                              'supported_efforts': ['low', 'medium', 'high']}):
             result = resolve('openrouter', 'mistralai/mistral-large-4')

@@ -5,6 +5,7 @@ import {AgentMenu} from './AgentMenu';
 import {ContextAttachments} from './ContextAttachments';
 import {PastedImages} from './PastedImages';
 import {ApprovalCards} from './ApprovalCards';
+import {ChangesView} from './ChangesView';
 import {ModelPicker} from './ModelPicker';
 import {ProviderForm} from './ProviderForm';
 import {FeaturesPanel} from './FeaturesPanel';
@@ -25,6 +26,7 @@ export class RadCodeView {
   return !!active?.acceptsImages;
  });
  private approvals=new ApprovalCards((m:any)=>this.post(m));
+ private changes=new ChangesView((m:any)=>this.post(m));
  private picker=new ModelPicker((m:any)=>this.post(m));
  private providerForm=new ProviderForm((m:any)=>this.post(m));
  private features=new FeaturesPanel((m:any)=>this.post(m));
@@ -315,6 +317,7 @@ export class RadCodeView {
   const titleElement=element('session-title') as HTMLElement|null;
   if(titleElement)titleElement.textContent=active?.title??'';
   this.renderModes(active);
+  this.changes.render(this.state.changes??[],this.state.changesNotice??'',this.state.sessions.some(s=>['running','configuring','cancelling','disconnected'].includes(s.status)));
   // Stop stays on screen so the control does not appear and vanish mid-turn; it is disabled
   // whenever there is nothing to cancel.
   (element('stop') as HTMLButtonElement).disabled=active?.status!=='running';
@@ -325,4 +328,3 @@ export class RadCodeView {
   this.transcript.render(active,element<HTMLInputElement>('show-thinking').checked);this.agents.render(this.state);
  }
 }
-new RadCodeView();

@@ -1,5 +1,65 @@
 # Changelog
 
+## 0.1.40
+
+- **Security: the provider probe no longer follows redirects.** `urllib` copies request headers onto a
+  redirect, so an endpoint could answer `302` and receive the user's API key at another host. Every
+  outbound request now goes through `bridge/net.py` (`open_once`), where a 3xx is reported as a
+  failure. Tested with two local servers: the redirect target is never contacted.
+- **Security: credential files are never attached.** `.env` (and `.env.*` except templates), `.npmrc`,
+  `.pypirc`, `.netrc`, `credentials.json`, `id_rsa`-family keys, `.pem`/`.key`/`.p12`/`.pfx`, `.kdbx`
+  and anything under `.git`/`.ssh`/`.gnupg` are refused by the host, hidden from the picker and never
+  offered as the active-editor chip. `.env.example` and friends stay attachable.
+- **Security: `ChangeJournal` rollback no longer has a path re-resolution window.** The target is
+  opened once with `O_NOFOLLOW`; content is verified and rewritten through that descriptor
+  (`ftruncate` + `write`), then the inode is re-checked against the path. Symlinks, hardlinks and a
+  swapped file are refused instead of followed. A refused revert no longer poisons the record.
+- **Security: the Hermes launcher is validated as data.** `hermes --print-runtime-command` output is
+  parsed by `src/domain/RuntimeCommand.ts` (absolute interpreter, existing file, exact `-I -c` shape,
+  no control characters), and the bridge directory travels in `PRAECODE_BRIDGE_DIR` instead of being
+  interpolated into the `-c` source.
+- **`bridge/control.py` split from 848 to a dispatcher.** `discovery/` (ladders, routes, catalogs,
+  model facts), `provider_save/` (endpoint rules + Hermes config write), `sessions/` (resume listing),
+  `delegation/` (policy + child runs), `rpc/` (fenced session RPC), plus `net.py`.
+- **`RadCodeExtension` split from 699 to ~220 lines.** `commands/` (session, model, workspace, and one
+  registration table), `handlers/` (one module per domain, merged with duplicate detection), `state/`
+  (recent index + state builder), and `host.ts`, the interface those modules receive.
+- **The provider `.env` write is atomic and `0600` from creation** (temp + `os.replace`, no
+  world-readable window, line breaks in a key refused).
+- **Testability:** the diff surfaces and revert guards moved out of `vscode` (`review/DiffDocuments`,
+  `review/revertGuard`), so the review diff URIs, snapshot bounds and every revert refusal are unit
+  tested. The handler table is asserted against the full webview protocol — which is how the
+  `screenshot` handler was caught missing after the split.
+- **The Python suite is green for the first time in this line:** the ten stale Mistral expectations
+  (`mistral-large-4` as `none/high`) were corrected to the shipped, probed `low/medium/high`, and the
+  wire tests now assert the real clamp behaviour instead of a guess.
+- **Extension-host harness:** it now writes `docs/extension-host-result.json` and fails loudly instead
+  of exiting 0 silently, and asserts the review surface too. It still cannot boot under this headless
+  runner (the window exits before the test host starts) — **no host-level run is claimed**.
+
+## 0.1.39
+
+- **Review what Hermes already changed, even with no approval prompt.** `Accept Edits` and
+  `Don't Ask` skip the permission request, so a new `ChangeJournal` records edits from the ACP event
+  stream itself and a **Changes** panel above the transcript lists them.
+- **Native diff review.** `Review diff` (and the `Hermes: Review Changes` command) opens an editor
+  diff between the recorded before-image and the after-image as read-only `praecode-review:`
+  documents, so nothing in the diff tab is a writable file.
+- **Keep and explicit Revert.** Keep only marks an entry reviewed. Revert requires the on-disk bytes
+  to still equal the recorded after-image, refuses when the file has unsaved editor changes or any
+  turn/worker is running, writes through a temp file + rename (new files are deleted), and persists
+  its intent before touching the filesystem so a crash cannot re-offer the same revert.
+- **Two capture shapes, both evidence-checked.** The local ACP adapter sends a full before/after
+  *diff*; the gateway sends only a *location*, in which case the file is snapshotted at the tool start
+  and the after-state is read at completion. A record becomes revertible only if the file changed
+  exactly once and no other write to it was in flight; otherwise it is kept as review-only.
+- Failed, cancelled or interrupted calls, multi-file V4A patches, shell/terminal edits, binary files
+  and history replays are deliberately **not** rollback sources. Bounded at 100 records / 16 MiB per
+  profile, 2 MiB per file, symlinks and `.git`/`.ssh`/`.hermes`/`.env`/key paths refused.
+- 12 new unit tests cover conflict-with-later-edits, new/deleted files, sequential edits, overlap,
+  gateway fragments, replay, sensitive/symlink/outside-workspace targets, caps and persistence; the
+  UI smoke asserts the panel's states, its busy guard and that each action posts its id.
+
 ## 0.1.38
 
 - Add Mammouth AI to the existing provider form: accept its root or `/v1` URL, normalize chat to

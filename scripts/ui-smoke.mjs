@@ -14,6 +14,7 @@ try{
   await route.fulfill({body,contentType:name.endsWith('.html')?'text/html':name.endsWith('.css')?'text/css':name.endsWith('.ttf')?'font/ttf':'text/javascript'});
  });
  await page.goto('http://radcode.test/');
+ assert.equal(await page.evaluate(()=>window.sent.filter(m=>m.type==='ready').length),1,'webview bootstraps once: review event handlers must not be duplicated');
  await page.getByRole('button',{name:'Connect to Hermes',exact:true}).click();
  assert.equal(await page.evaluate(()=>window.sent.at(-1).type),'new');
  await page.evaluate(()=>window.postMessage({type:'state',sessions:[{id:'s',title:'Test conversation',kind:'chat',status:'idle',messages:[{id:'m',role:'assistant',text:'Hello **world** <img src=x onerror="window.pwned=1">'}],info:{model:'test-model',provider:'test',effort:'high',capabilities:{values:['none','low','high','xhigh'],note:'Test capability fixture'}}}],activeId:'s',presets:[],recent:[],editor:{path:'/w/src/app.ts',name:'src/app.ts',line:12},appearance:{accent:'lime',fontFamily:'monospace',fontSize:13,lineHeight:0,compact:false}},'*'));
@@ -423,6 +424,21 @@ for(const width of [320,430,1440]){
  }
 }
 await page.setViewportSize({width:430,height:900});
+// Changes panel: metadata only, Revert disabled while a turn is live, and each action posts its id.
+await page.evaluate(()=>window.postMessage({type:'state',sessions:[{id:'s',title:'Review',kind:'chat',status:'running',messages:[],
+ info:{model:'m',provider:'p',effort:'high',capabilities:{values:['high'],note:'n'}}}],activeId:'s',presets:[],recent:[],
+ changes:[{id:'c1',sessionId:'s',path:'/w/src/app.ts',at:Date.now(),state:'ready',note:'Applied to disk; awaiting your review.',canReview:true},
+          {id:'c2',sessionId:'s',path:'/w/src/odd.ts',at:Date.now(),state:'unavailable',note:'Result differs from the captured proposal; review only.',canReview:false}],
+ changesNotice:'',appearance:{accent:'lime',fontSize:13,lineHeight:0,compact:false}},'*'));
+await page.locator('#changes-list .change-card').first().waitFor();
+assert.equal(await page.locator('#changes-list .change-card').count(),2);
+assert.match(await page.locator('#changes-heading').textContent(),/Changes \(2 to review · 2 saved\)/);
+assert.equal(await page.locator('.change-card').first().getByRole('button',{name:'Revert'}).isDisabled(),true,'Revert is blocked while a turn is running');
+await page.locator('.change-card').first().getByRole('button',{name:'Review diff'}).click();
+assert.deepEqual(await page.evaluate(()=>{const m=window.sent.at(-1);return {type:m.type,changeId:m.changeId};}),{type:'reviewChange',changeId:'c1'});
+assert.equal(await page.locator('.change-card').nth(1).getByRole('button',{name:'Review diff'}).isDisabled(),true,'no diff when nothing complete was captured');
+await page.locator('.change-card').nth(1).getByRole('button',{name:'Keep'}).click();
+assert.deepEqual(await page.evaluate(()=>{const m=window.sent.at(-1);return {type:m.type,changeId:m.changeId};}),{type:'keepChange',changeId:'c2'});
 // Screenshots show the shipped default size (10), which is what a new install renders.
 await page.evaluate(()=>window.postMessage({type:'state',sessions:[{id:'s',title:'Pixel typography',kind:'chat',status:'idle',
  messages:[{id:'u',role:'user',text:'Three faces, three roles.'},
@@ -439,5 +455,5 @@ await page.screenshot({path:'docs/ui-dark.png',fullPage:true});
  await page.addStyleTag({url:'http://radcode.test/theme.css'});
  await page.screenshot({path:'docs/ui-light.png',fullPage:true});
  assert.deepEqual(errors,[]);
- console.log('Webview smoke passed: connect, capability-aware effort, sanitized Markdown, agent form, keyboard send, approval mode select, approval cards, context meter, context attachments, composer clearing, accent + font settings, bold control/regular message hierarchy, Hermes delegation panel, Mistral provider facts, add-provider form, image thumbnails decode, dark/light rendering.');
+ console.log('Webview smoke passed: connect, capability-aware effort, sanitized Markdown, agent form, keyboard send, approval mode select, approval cards, context meter, context attachments, composer clearing, accent + font settings, bold control/regular message hierarchy, Hermes delegation panel, Mistral provider facts, add-provider form, review changes, image thumbnails decode, dark/light rendering.');
 }finally{await browser.close();}
